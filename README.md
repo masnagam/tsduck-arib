@@ -66,4 +66,5 @@ TSDuck is distributed under the terms of the Simplified BSD License.
 See the file `LICENSE.txt` for details.
 
 *Copyright (c) 2005-2019, Thierry Lelegard*<br/>
+*Copyright (c) 2019 Masayuki Nagamachi <masayuki.nagamachi@gmail.com>*<br/>
 *All rights reserved*

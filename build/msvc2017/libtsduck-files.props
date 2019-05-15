@@ -133,6 +133,7 @@
     <ClInclude Include="..\..\src\libtsduck\tsDuckContext.h" />
     <ClInclude Include="..\..\src\libtsduck\tsDuckProtocol.h" />
     <ClInclude Include="..\..\src\libtsduck\tsDVBCharset.h" />
+    <ClInclude Include="..\..\src\libtsduck\tsDVBCharsetARIB.h" />
     <ClInclude Include="..\..\src\libtsduck\tsDVBCharsetSingleByte.h" />
     <ClInclude Include="..\..\src\libtsduck\tsDVBCharsetUTF16.h" />
     <ClInclude Include="..\..\src\libtsduck\tsDVBCharsetUTF8.h" />
@@ -619,6 +620,7 @@
     <ClCompile Include="..\..\src\libtsduck\tsDuckContext.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsDuckProtocol.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsDVBCharset.cpp" />
+    <ClCompile Include="..\..\src\libtsduck\tsDVBCharsetARIB.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsDVBCharsetSingleByte.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsDVBCharsetUTF16.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsDVBCharsetUTF8.cpp" />

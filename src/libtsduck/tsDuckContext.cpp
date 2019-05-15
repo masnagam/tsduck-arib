@@ -2,6 +2,7 @@
 //
 // TSDuck - The MPEG Transport Stream Toolkit
 // Copyright (c) 2005-2019, Thierry Lelegard
+// Copyright (c) 2019 Masayuki Nagamachi <masayuki.nagamachi@gmail.com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -34,6 +35,9 @@
 #include "tsCerrReport.h"
 #include "tsDVBCharset.h"
 #include "tsArgs.h"
+#if defined(TS_ARIB)
+#include "tsDVBCharsetARIB.h"
+#endif
 TSDUCK_SOURCE;
 
 
@@ -327,6 +331,12 @@ void ts::DuckContext::defineOptions(Args& args, int cmdOptionsMask)
                   u"strings, which is not the case with some operators. Using this option, "
                   u"all DVB strings without explicit table code are assumed to use ISO-8859-15 "
                   u"instead of the standard ISO-6937 encoding.");
+
+#if defined(TS_ARIB)
+        args.option(u"arib", 0);
+        args.help(u"arib",
+                  u"A synonym for '--default-charset ARIB-STD-B24'.");
+#endif
     }
 
     // Options relating to default UHF/VHF region.
@@ -372,6 +382,11 @@ bool ts::DuckContext::loadOptions(Args& args)
         if (args.present(u"europe")) {
             _dvbCharsetIn = _dvbCharsetOut = &DVBCharsetSingleByte::ISO_8859_15;
         }
+#if defined(TS_ARIB)
+        else if (args.present(u"arib")) {
+            _dvbCharsetIn = _dvbCharsetOut = &DVBCharsetARIB::ARIB_STD_B24;
+        }
+#endif
         else {
             const UString name(args.value(u"default-charset"));
             if (!name.empty() && (_dvbCharsetIn = _dvbCharsetOut = DVBCharset::GetCharset(name)) == nullptr) {

@@ -27,60 +27,48 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //
 //----------------------------------------------------------------------------
-//
-//  CppUnit test suite for DVBCharset and subclasses.
-//
+//!
+//!  @file
+//!  Declaration of class DVBCharsetARIB.
+//!
 //----------------------------------------------------------------------------
 
-#include "tsDVBCharset.h"
-#include "utestCppUnitTest.h"
-TSDUCK_SOURCE;
-
-//----------------------------------------------------------------------------
-// The test fixture
-//----------------------------------------------------------------------------
-
-class DVBCharsetTest: public CppUnit::TestFixture
-{
-public:
-    virtual void setUp() override;
-    virtual void tearDown() override;
-
-    void testRepository();
-
-    CPPUNIT_TEST_SUITE(DVBCharsetTest);
-    CPPUNIT_TEST(testRepository);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(DVBCharsetTest);
-
-
-//----------------------------------------------------------------------------
-// Initialization.
-//----------------------------------------------------------------------------
-
-// Test suite initialization method.
-void DVBCharsetTest::setUp()
-{
-}
-
-// Test suite cleanup method.
-void DVBCharsetTest::tearDown()
-{
-}
-
-
-//----------------------------------------------------------------------------
-// Test cases
-//----------------------------------------------------------------------------
-
-void DVBCharsetTest::testRepository()
-{
-    utest::Out() << "DVBCharsetTest::testRepository: charsets: " << ts::UString::Join(ts::DVBCharset::GetAllNames()) << std::endl;
 #if defined(TS_ARIB)
-    CPPUNIT_ASSERT_EQUAL(size_t(18), ts::DVBCharset::GetAllNames().size());
-#else
-    CPPUNIT_ASSERT_EQUAL(size_t(17), ts::DVBCharset::GetAllNames().size());
-#endif
+
+#pragma once
+#include "tsDVBCharset.h"
+
+namespace ts {
+    //!
+    //! Definition of Japanese character set defined in ARIB STD-B24.
+    //! @see ARIB STD-B24, Chapter 7 "Character coding" in Part 2.
+    //! @ingroup mpeg
+    //!
+    class TSDUCKDLL DVBCharsetARIB: public DVBCharset
+    {
+    public:
+        //!
+        //! ARIB character set singleton
+        //!
+        static const DVBCharsetARIB ARIB_STD_B24;
+
+        // Inherited methods.
+        virtual bool decode(UString& str, const uint8_t* dvb, size_t dvbSize) const override;
+        virtual bool canEncode(const UString& str, size_t start = 0, size_t count = NPOS) const override;
+        virtual size_t encode(uint8_t*& buffer, size_t& size, const UString& str, size_t start = 0, size_t count = NPOS) const override;
+
+    protected:
+        //!
+        //! Constructor.
+        //! There is only one definition for such DVB character sets.
+        //!
+        DVBCharsetARIB() : DVBCharset(u"ARIB-STD-B24", 0x081B24) {}
+
+    private:
+        // Inaccessible operations.
+        DVBCharsetARIB(const DVBCharsetARIB&) = delete;
+        DVBCharsetARIB& operator=(const DVBCharsetARIB&) = delete;
+    };
 }
+
+#endif // TS_ARIB

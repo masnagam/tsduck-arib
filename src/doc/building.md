@@ -160,6 +160,28 @@ to `CppUnit`, `pcsc-lite`, `libcurl` and Dektec `DTAPI`:
 make NOTEST=1 NOPCSC=1 NOCURL=1 NODTAPI=1
 ~~~
 
+### Building with ARIB STD-B24 character set support
+
+The ARIB STD-B24 character set support can be enabled by building with `ARIB=1`
+like below:
+
+~~~
+export PKG_CONFIG_PATH=/path/to/aribb24/lib/pkgconfig  # if needed
+make ARIB=1
+~~~
+
+The ARIB STD-B24 character set support is disabled by default.
+
+Before building, you need to install
+[aribb24](https://github.com/nkoriyama/aribb24) and `pkg-config`.
+
+In addition, GCC >=6.1 or Clang >=3.4 is required for C++14 support.
+
+It has been confirmed that it's possible to build with `ARIB=1` on the following
+environments:
+
+* macOS Mojave 10.14.4, Apple LLVM version 10.0.1 (clang-1001.0.46.4)
+
 # Building the TSDuck installers {#buildinst}
 
 There is no need to build the TSDuck binaries before building the installers.

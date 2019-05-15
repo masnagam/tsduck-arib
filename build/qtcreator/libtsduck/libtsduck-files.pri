@@ -131,6 +131,7 @@ HEADERS += \
     ../../../src/libtsduck/tsDuckContext.h \
     ../../../src/libtsduck/tsDuckProtocol.h \
     ../../../src/libtsduck/tsDVBCharset.h \
+    ../../../src/libtsduck/tsDVBCharsetARIB.h \
     ../../../src/libtsduck/tsDVBCharsetSingleByte.h \
     ../../../src/libtsduck/tsDVBCharsetUTF16.h \
     ../../../src/libtsduck/tsDVBCharsetUTF8.h \
@@ -607,6 +608,7 @@ SOURCES += \
     ../../../src/libtsduck/tsDuckContext.cpp \
     ../../../src/libtsduck/tsDuckProtocol.cpp \
     ../../../src/libtsduck/tsDVBCharset.cpp \
+    ../../../src/libtsduck/tsDVBCharsetARIB.cpp \
     ../../../src/libtsduck/tsDVBCharsetSingleByte.cpp \
     ../../../src/libtsduck/tsDVBCharsetUTF16.cpp \
     ../../../src/libtsduck/tsDVBCharsetUTF8.cpp \
