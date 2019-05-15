@@ -2,6 +2,7 @@
 //
 // TSDuck - The MPEG Transport Stream Toolkit
 // Copyright (c) 2005-2019, Thierry Lelegard
+// Copyright (c) 2019 Masayuki Nagamachi <masayuki.nagamachi@gmail.com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -91,7 +92,7 @@ void ts::Thread::Yield()
 {
 #if defined(TS_WINDOWS)
     ::SwitchToThread();
-#elif defined(TS_MAC)
+#elif defined(TS_MAC) || defined(HAVE_NO_PTHREAD_YIELD)
     ::sched_yield();
 #else
     ::pthread_yield();
