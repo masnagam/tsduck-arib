@@ -44,6 +44,11 @@ constexpr uint16_t ts::DVBCharset::DVB_CODEPOINT_CRLF;
 
 bool ts::DVBCharset::GetCharCodeTable(uint32_t& code, size_t& codeSize, const uint8_t* dvb, size_t dvbSize)
 {
+#if defined(TS_ARIB)
+    code = 0x081B24;
+    codeSize = 0;
+    return true;
+#else
     // Null or empty buffer is a valid empty string.
     if (dvb == nullptr || dvbSize == 0) {
         code = 0;
@@ -82,6 +87,7 @@ bool ts::DVBCharset::GetCharCodeTable(uint32_t& code, size_t& codeSize, const ui
     code = 0xFFFFFFFF;
     codeSize = 0;
     return false;
+#endif
 }
 
 
