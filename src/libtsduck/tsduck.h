@@ -2,7 +2,6 @@
 //
 // TSDuck - The MPEG Transport Stream Toolkit
 // Copyright (c) 2005-2019, Thierry Lelegard
-// Copyright (c) 2019 Masayuki Nagamachi <masayuki.nagamachi@gmail.com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without

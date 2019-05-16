@@ -2,6 +2,7 @@
 //
 // TSDuck - The MPEG Transport Stream Toolkit
 // Copyright (c) 2005-2019, Thierry Lelegard
+// Copyright (c) 2019 Masayuki Nagamachi <masayuki.nagamachi@gmail.com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,10 +46,13 @@ constexpr uint16_t ts::DVBCharset::DVB_CODEPOINT_CRLF;
 bool ts::DVBCharset::GetCharCodeTable(uint32_t& code, size_t& codeSize, const uint8_t* dvb, size_t dvbSize)
 {
 #if defined(TS_ARIB)
-    code = 0x081B24;
-    codeSize = 0;
-    return true;
-#else
+    if (::getenv("TSDUCK_ENFORCE_ARIB_STD_B24") != nullptr) {
+        code = 0x081B24;
+        codeSize = 0;
+        return true;
+    }
+#endif
+
     // Null or empty buffer is a valid empty string.
     if (dvb == nullptr || dvbSize == 0) {
         code = 0;
@@ -87,7 +91,6 @@ bool ts::DVBCharset::GetCharCodeTable(uint32_t& code, size_t& codeSize, const ui
     code = 0xFFFFFFFF;
     codeSize = 0;
     return false;
-#endif
 }
 
 

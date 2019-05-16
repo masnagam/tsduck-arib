@@ -2,6 +2,7 @@
 //
 // TSDuck - The MPEG Transport Stream Toolkit
 // Copyright (c) 2005-2019, Thierry Lelegard
+// Copyright (c) 2019 Masayuki Nagamachi <masayuki.nagamachi@gmail.com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,6 +33,9 @@
 #include "tsDVBCharsetSingleByte.h"
 #include "tsDVBCharsetUTF16.h"
 #include "tsDVBCharsetUTF8.h"
+#if defined(TS_ARIB)
+#include "tsDVBCharsetARIB.h"
+#endif
 TSDUCK_SOURCE;
 
 // Macros to generate a unique symbol name.
@@ -58,6 +62,9 @@ ts::StaticReferencesDVB::StaticReferencesDVB() :
     REF_OBJECT(DVBCharsetSingleByte::ISO_6937);
     REF_OBJECT(DVBCharsetUTF16::UNICODE);
     REF_OBJECT(DVBCharsetUTF8::UTF_8);
+#if defined(TS_ARIB)
+    REF_OBJECT(DVBCharsetARIB::ARIB_STD_B24);
+#endif
 
     // References to all DVB tables and descriptors.
     // The file tsRefType.h is automatically generated.
