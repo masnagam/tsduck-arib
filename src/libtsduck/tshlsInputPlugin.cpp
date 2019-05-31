@@ -185,6 +185,11 @@ bool ts::hls::InputPlugin::getOptions()
     _highestRes = present(u"highest-resolution");
     _listVariants = present(u"list-variants");
 
+    // Enable authentication tokens from master playlist to media playlist
+    // and from media playlists to media segments.
+    _webArgs.useCookies = true;
+    _webArgs.cookiesFile = TempFile(u".cookies");
+
     if (present(u"live")) {
         // With live streams, start at the last segment.
         if (_startSegment != 0) {
@@ -338,6 +343,28 @@ bool ts::hls::InputPlugin::start()
 
 
 //----------------------------------------------------------------------------
+// Input stop method
+//----------------------------------------------------------------------------
+
+bool ts::hls::InputPlugin::stop()
+{
+    // Invoke superclass.
+    bool ok = AbstractHTTPInputPlugin::stop();
+
+    // Delete all cookies from this session.
+    if (FileExists(_webArgs.cookiesFile)) {
+        tsp->debug(u"deleting cookies file %s", {_webArgs.cookiesFile});
+        const ErrorCode status = DeleteFile(_webArgs.cookiesFile);
+        if (status != SYS_SUCCESS) {
+            tsp->error(u"error deleting cookies file %s", {_webArgs.cookiesFile});
+        }
+    }
+
+    return ok;
+}
+
+
+//----------------------------------------------------------------------------
 // Input method. Executed in a separate thread.
 //----------------------------------------------------------------------------
 
@@ -352,12 +379,15 @@ void ts::hls::InputPlugin::processInput()
 
         // Create a Web request to download the content.
         WebRequest request(*tsp);
-        request.setURL(_playlist.buildURL(seg.uri));
+        const UString url(_playlist.buildURL(seg.uri));
+        request.setURL(url);
         request.setAutoRedirect(true);
         request.setArgs(_webArgs);
+        request.enableCookies(_webArgs.cookiesFile);
 
         // Perform the download of the current segment.
         // Ignore errors, continue to play next segments.
+        tsp->debug(u"downloading segment %s", {url});
         request.downloadToApplication(this);
 
         // If there is only one or zero remaining segment, try to reload the playlist.

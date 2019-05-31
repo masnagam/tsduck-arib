@@ -53,9 +53,13 @@ ts::PCRAnalyzer::PCRAnalyzer(size_t min_pid, size_t min_pcr) :
     _ts_bitrate_188(0),
     _ts_bitrate_204(0),
     _ts_bitrate_cnt(0),
+    _inst_ts_bitrate_188(0),
+    _inst_ts_bitrate_204(0),
     _completed_pids(0),
     _pcr_pids(0),
-    _discontinuities(0)
+    _discontinuities(0),
+    _pid(),
+    _packet_pcr_index_map()
 {
     TS_ZERO(_pid);
 }
@@ -78,7 +82,7 @@ ts::PCRAnalyzer::~PCRAnalyzer()
 ts::PCRAnalyzer::PIDAnalysis::PIDAnalysis() :
     ts_pkt_cnt(0),
     cur_continuity(0),
-    last_pcr_value(0),
+    last_pcr_value(INVALID_PCR),
     last_pcr_packet(0),
     ts_bitrate_188(0),
     ts_bitrate_204(0),
@@ -98,7 +102,9 @@ ts::PCRAnalyzer::Status::Status() :
     packet_count(0),
     pcr_count(0),
     pcr_pids(0),
-    discontinuities(0)
+    discontinuities(0),
+    instantaneous_bitrate_188(0),
+    instantaneous_bitrate_204(0)
 {
 }
 
@@ -114,8 +120,8 @@ ts::PCRAnalyzer::Status::Status(const PCRAnalyzer& an) : Status()
 
 ts::UString ts::PCRAnalyzer::Status::toString() const
 {
-    return UString::Format(u"valid: %s, bitrate: %'d b/s, packets: %'d, PCRs: %'d, PIDs with PCR: %'d, discont: %'d",
-                           {bitrate_valid, bitrate_188, packet_count, pcr_count, pcr_pids, discontinuities});
+    return UString::Format(u"valid: %s, bitrate: %'d b/s, packets: %'d, PCRs: %'d, PIDs with PCR: %'d, discont: %'d, instantaneous bitrate: %'d b/s",
+                           {bitrate_valid, bitrate_188, packet_count, pcr_count, pcr_pids, discontinuities, instantaneous_bitrate_188});
 }
 
 
@@ -144,6 +150,8 @@ void ts::PCRAnalyzer::reset()
     _ts_bitrate_cnt = 0;
     _completed_pids = 0;
     _pcr_pids = 0;
+    _inst_ts_bitrate_188 = 0;
+    _inst_ts_bitrate_204 = 0;
 
     for (size_t i = 0; i < PID_MAX; ++i) {
         if (_pid[i] != nullptr) {
@@ -151,6 +159,8 @@ void ts::PCRAnalyzer::reset()
             _pid[i] = nullptr;
         }
     }
+
+    _packet_pcr_index_map.clear();
 }
 
 
@@ -180,16 +190,17 @@ void ts::PCRAnalyzer::setIgnoreErrors(bool ignore)
 // Process a discontinuity in the transport stream
 //----------------------------------------------------------------------------
 
-void ts::PCRAnalyzer::processDiscountinuity()
+void ts::PCRAnalyzer::processDiscontinuity()
 {
     _discontinuities++;
 
-    // All collected PCR becomes invalid since at least one packet is missing.
+    // All collected PCR's become invalid since at least one packet is missing.
     for (size_t i = 0; i < PID_MAX; ++i) {
         if (_pid[i] != nullptr) {
-            _pid[i]->last_pcr_value = 0;
+            _pid[i]->last_pcr_value = INVALID_PCR;
         }
     }
+    _packet_pcr_index_map.clear();
 }
 
 
@@ -206,6 +217,16 @@ ts::BitRate ts::PCRAnalyzer::bitrate188() const
 ts::BitRate ts::PCRAnalyzer::bitrate204() const
 {
     return _ts_bitrate_cnt == 0 ? 0 : BitRate(_ts_bitrate_204 / _ts_bitrate_cnt);
+}
+
+ts::BitRate ts::PCRAnalyzer::instantaneousBitrate188() const
+{
+    return BitRate(_inst_ts_bitrate_188);
+}
+
+ts::BitRate ts::PCRAnalyzer::instantaneousBitrate204() const
+{
+    return BitRate(_inst_ts_bitrate_204);
 }
 
 
@@ -250,6 +271,8 @@ void ts::PCRAnalyzer::getStatus(Status& stat) const
     stat.pcr_count = _ts_bitrate_cnt;
     stat.pcr_pids = _pcr_pids;
     stat.discontinuities = _discontinuities;
+    stat.instantaneous_bitrate_188 = instantaneousBitrate188();
+    stat.instantaneous_bitrate_204 = instantaneousBitrate204();
 }
 
 
@@ -265,7 +288,7 @@ bool ts::PCRAnalyzer::feedPacket(const TSPacket& pkt)
 
     // Reject invalid packets, suspected TS corruption
     if (!_ignore_errors && !pkt.hasValidSync()) {
-        processDiscountinuity();
+        processDiscontinuity();
         return _bitrate_valid;
     }
 
@@ -281,7 +304,7 @@ bool ts::PCRAnalyzer::feedPacket(const TSPacket& pkt)
     // Count one more packet in the PID
     ps->ts_pkt_cnt++;
 
-    // Null packets are ignored in PCR calculation.
+    // Null packets are ignored in PCR calculation (except for increment of _ts_pkt_cnt/ts_pkt_cnt).
     if (pid == PID_NULL) {
         return _bitrate_valid;
     }
@@ -315,26 +338,48 @@ bool ts::PCRAnalyzer::feedPacket(const TSPacket& pkt)
 
         // In case of suspected packet loss, reset calculations
         if (broken_rate) {
-            processDiscountinuity();
+            processDiscontinuity();
         }
     }
 
     // Process PCR (or DTS)
     if ((_use_dts && pkt.hasDTS()) || (!_use_dts && pkt.hasPCR())) {
 
-        // Get PCR value (or converted DTS)
-        const uint64_t pcr = _use_dts ? pkt.getDTS() * SYSTEM_CLOCK_SUBFACTOR : pkt.getPCR();
+        // Get PCR value (or DTS)
+        const uint64_t pcr_dts = _use_dts ? pkt.getDTS() : pkt.getPCR();
 
-        // If last PCR valid, compute transport rate between the two
-        if (ps->last_pcr_value != 0 && ps->last_pcr_value < pcr) {
+        // If last PCR/DTS valid, compute transport rate between the two
+        if (ps->last_pcr_value != INVALID_PCR && ps->last_pcr_value != pcr_dts) {
 
-            // Compute transport rate in b/s since last PCR
+            // Compute transport rate in b/s since last PCR/DTS
+            uint64_t diff_values = _use_dts ?
+                DiffPTS(ps->last_pcr_value, pcr_dts) * SYSTEM_CLOCK_SUBFACTOR :
+                DiffPCR(ps->last_pcr_value, pcr_dts);
+
             uint64_t ts_bitrate_188 =
                 ((_ts_pkt_cnt - ps->last_pcr_packet) * SYSTEM_CLOCK_FREQ * PKT_SIZE * 8) /
-                (pcr - ps->last_pcr_value);
+                diff_values;
             uint64_t ts_bitrate_204 =
                 ((_ts_pkt_cnt - ps->last_pcr_packet) * SYSTEM_CLOCK_FREQ * PKT_RS_SIZE * 8) /
-                (pcr - ps->last_pcr_value);
+                diff_values;
+
+            // Clear out values older than 1 second from _packet_pcr_index_map.
+            // Note that this is a map that covers PCR/DTS packets across all PIDs
+            // as long as the clocks used to generate the PCR/DTS values for different
+            // programs is the same clock, there should be no issue, but if the PCR/DTS values
+            // across the two programs are wildly different, then the following approach won't work.
+            while (!_packet_pcr_index_map.empty()) {
+                const uint64_t earliestPCR_DTS = _packet_pcr_index_map.begin()->first;
+                diff_values = _use_dts ?
+                    DiffPTS(earliestPCR_DTS, pcr_dts) * SYSTEM_CLOCK_SUBFACTOR :
+                    DiffPCR(earliestPCR_DTS, pcr_dts);
+                if (diff_values > SYSTEM_CLOCK_FREQ) {
+                    _packet_pcr_index_map.erase(_packet_pcr_index_map.begin());
+                }
+                else {
+                    break;
+                }
+            }
 
             // Per-PID statistics:
             ps->ts_bitrate_188 += ts_bitrate_188;
@@ -350,6 +395,19 @@ bool ts::PCRAnalyzer::feedPacket(const TSPacket& pkt)
             _ts_bitrate_204 += ts_bitrate_204;
             _ts_bitrate_cnt++;
 
+            // Transport stream instantaneous statistics
+            // For instantaneous bit rates, these are the actual bit rates, and it doesn't use the "count"
+            // approach
+            diff_values = _use_dts ?
+                DiffPTS(_packet_pcr_index_map.begin()->first, pcr_dts) * SYSTEM_CLOCK_SUBFACTOR :
+                DiffPCR(_packet_pcr_index_map.begin()->first, pcr_dts);
+            _inst_ts_bitrate_188 =
+                ((_ts_pkt_cnt - _packet_pcr_index_map.begin()->second) * SYSTEM_CLOCK_FREQ * PKT_SIZE * 8) /
+                diff_values;
+            _inst_ts_bitrate_204 =
+                ((_ts_pkt_cnt - _packet_pcr_index_map.begin()->second) * SYSTEM_CLOCK_FREQ * PKT_RS_SIZE * 8) /
+                diff_values;
+
             // Check if we got enough values for this PID
             if (ps->ts_bitrate_cnt == _min_pcr) {
                 _completed_pids++;
@@ -357,10 +415,19 @@ bool ts::PCRAnalyzer::feedPacket(const TSPacket& pkt)
             }
         }
 
-        // Save PCR for next calculation, ignore duplicated PCR values.
-        if (ps->last_pcr_value != pcr) {
-            ps->last_pcr_value = pcr;
+        // Save PCR/DTS for next calculation, ignore duplicated values.
+        if (ps->last_pcr_value != pcr_dts) {
+            ps->last_pcr_value = pcr_dts;
             ps->last_pcr_packet = _ts_pkt_cnt;
+
+            // Also add PCR (or DTS)/packet index combo to map for use in instantaneous bit rate calculations.
+            _packet_pcr_index_map[pcr_dts] = _ts_pkt_cnt;
+
+            // Make sure that some crazy TS does not accumulate thousands of PCR values in the same second range.
+            while (_packet_pcr_index_map.size() > FOOLPROOF_MAP_LIMIT) {
+                // Erase older entries.
+                _packet_pcr_index_map.erase(_packet_pcr_index_map.begin());
+            }
         }
     }
 

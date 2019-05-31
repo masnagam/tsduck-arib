@@ -45,6 +45,7 @@ SUBDIRS += \
     tsplugin_continuity \
     tsplugin_count \
     tsplugin_craft \
+    tsplugin_cutoff \
     tsplugin_datainject \
     tsplugin_decap \
     tsplugin_dektec \
@@ -101,6 +102,7 @@ SUBDIRS += \
     tsplugin_teletext \
     tsplugin_time \
     tsplugin_timeref \
+    tsplugin_trigger \
     tsplugin_tsrename \
     tsplugin_until \
     tsplugin_zap \

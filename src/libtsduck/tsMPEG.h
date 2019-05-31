@@ -402,6 +402,21 @@ namespace ts {
     constexpr uint64_t INVALID_DTS = TS_UCONST64(0xFFFFFFFFFFFFFFFF);
 
     //!
+    //! The maximum value possible for a PCR (Program Clock Reference) value.
+    //! This is arrived at as follows:  (max PCR_base * 300) + max PCR_ext
+    //! PCR_base is represented by 33 bits, so max PCR_base = 2^33 - 1
+    //! PCR_ext is represented by 9 bits; however, it may only have values
+    //! 0-299 per specification.  As such, the maximum PCR is:
+    //! (2^33 - 1) * 300 + 299.
+    //!
+    constexpr uint64_t MAX_PCR = TS_UCONST64(2576980377599);
+
+    //!
+    //! The maximum value possible for a PTS/DTS value.
+    //!
+    constexpr uint64_t MAX_PTS_DTS = PTS_DTS_MASK;
+
+    //!
     //! Check if PCR2 follows PCR1 after wrap up.
     //! @param [in] pcr1 First PCR.
     //! @param [in] pcr2 Second PCR.
@@ -420,10 +435,16 @@ namespace ts {
     //! @return The PCR of the packet which is at the specified @a distance from the packet with @a last_pcr
     //! or INVALID_PCR if a parameter is incorrect.
     //!
-    TSDUCKDLL inline uint64_t NextPCR(uint64_t last_pcr, PacketCounter distance, BitRate bitrate)
-    {
-        return (last_pcr == INVALID_PCR || bitrate == 0) ? INVALID_PCR : last_pcr + (distance * 8 * PKT_SIZE * SYSTEM_CLOCK_FREQ) / uint64_t(bitrate);
-    }
+    TSDUCKDLL uint64_t NextPCR(uint64_t last_pcr, PacketCounter distance, BitRate bitrate);
+
+    //!
+    //! Compute the difference between PCR2 and PCR1.
+    //! @param [in] pcr1 First PCR.
+    //! @param [in] pcr2 Second PCR.
+    //! @return The difference between the two values.
+    //! or INVALID_PCR if a parameter is incorrect.
+    //!
+    TSDUCKDLL uint64_t DiffPCR(uint64_t pcr1, uint64_t pcr2);
 
     //!
     //! Check if PTS2 follows PTS1 after wrap up.
@@ -437,7 +458,7 @@ namespace ts {
     }
 
     //!
-    //! Check if two Presentation Time Stamp are in sequence.
+    //! Check if two Presentation Time Stamps are in sequence.
     //!
     //! In MPEG video, B-frames are transported out-of-sequence.
     //! Their PTS is typically lower than the previous D-frame or I-frame
@@ -451,6 +472,15 @@ namespace ts {
     {
         return pts1 <= pts2 || WrapUpPTS(pts1, pts2);
     }
+
+    //!
+    //! Compute the difference between PTS2 and PTS1.
+    //! @param [in] pts1 First PTS.
+    //! @param [in] pts2 Second PTS.
+    //! @return The difference between the two values.
+    //! or INVALID_PTS if a parameter is incorrect.
+    //!
+    TSDUCKDLL uint64_t DiffPTS(uint64_t pts1, uint64_t pts2);
 
     //---------------------------------------------------------------------
     //! Stream id values, as used in PES header.

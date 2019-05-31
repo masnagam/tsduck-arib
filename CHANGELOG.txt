@@ -2,11 +2,16 @@ TSDUCK CHANGE LOG AND RELEASE NOTES
 
 -------------------------------------------------------------------------------
 
-VERSION 3.18-1236
+VERSION 3.18-1281
 
 [NEW] New commands and plugins:
 
-  * Added input plugin "craft" to build specifically crafted packets.
+  * Added plugin "craft" as input to build specifically crafted packets and as
+    packet processor to similarly alter packets in transit.
+  * Added plugin 'trigger" which executes actions on selected labeled TS
+    packets.
+  * Added plugin "cutoff" which sets labels on TS packets upon reception of
+    UDP messages.
 
 [IMP] Improvements on existing commands and plugins:
 
@@ -22,6 +27,9 @@ VERSION 3.18-1236
     "pmt". The option --add-programinfo-id is now deprecated.
   * Added option --eit to plugin "timeref".
   * Added option --tag to plugin "count".
+  * Added options--set-label-below, --set-label-normal, --set-label-above,
+    --set-label-go-below, --set-label-go-normal, --set-label-go-above to
+    plugin "bitrate_monitor".
 
 [BUG] Bug fixes:
 
@@ -29,6 +37,8 @@ VERSION 3.18-1236
     removed by default inside all text nodes.
   * Fixed input plugin "dektec": with satellite receivers, the LNB was not
     properly enabled.
+  * In input plugin "hls", the cookies which were returned by a playlist were
+    not passed to the next playlist or segment download.
 
 -------------------------------------------------------------------------------
 

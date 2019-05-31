@@ -1,7 +1,7 @@
 //----------------------------------------------------------------------------
 //
 // TSDuck - The MPEG Transport Stream Toolkit
-// Copyright (c) 2005-2019, Jerome Leveque
+// Copyright (c) 2005-2019, Jerome Leveque, Thierry Lelegard
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,7 @@
 
 #include "tsPlugin.h"
 #include "tsPluginRepository.h"
+#include "tsForkPipe.h"
 #include "tsTime.h"
 TSDUCK_SOURCE;
 
@@ -77,11 +78,14 @@ namespace ts {
         size_t      _window_size;          // Size (in seconds) of the time window, used to compute bitrate.
         bool        _startup;              // Measurement in progress.
         size_t      _pkt_count_index;      // Index for packet number array.
-        std::vector<PacketCounter> _pkt_count; // Array with the number of packets received during the last time window.
-                                               // Numbers are stored second per second.
-
-        // Run the alarm command.
-        void runAlarmCommand(const ts::UString& parameter);
+        std::vector<PacketCounter> _pkt_count;        // Number of packets received during last time window, second per second.
+        TSPacketMetadata::LabelSet _labels_below;     // Set these labels on all packets when bitrate is below normal.
+        TSPacketMetadata::LabelSet _labels_normal;    // Set these labels on all packets when bitrate is normal.
+        TSPacketMetadata::LabelSet _labels_above;     // Set these labels on all packets when bitrate is above normal.
+        TSPacketMetadata::LabelSet _labels_go_below;  // Set these labels on one packet when bitrate goes below normal.
+        TSPacketMetadata::LabelSet _labels_go_normal; // Set these labels on one packet when bitrate goes back to normal.
+        TSPacketMetadata::LabelSet _labels_go_above;  // Set these labels on one packet when bitrate goes above normal.
+        TSPacketMetadata::LabelSet _labels_next;      // Set these labels on next packet.
 
         // Compute bitrate. Report any alarm.
         void computeBitrate();
@@ -126,7 +130,14 @@ ts::BitrateMonitorPlugin::BitrateMonitorPlugin(TSP* tsp_) :
     _window_size(0),
     _startup(false),
     _pkt_count_index(0),
-    _pkt_count()
+    _pkt_count(),
+    _labels_below(),
+    _labels_normal(),
+    _labels_above(),
+    _labels_go_below(),
+    _labels_go_normal(),
+    _labels_go_above(),
+    _labels_next()
 {
     // The PID was previously passed as argument. We now use option --pid.
     // We still accept the argument for legacy, but not both.
@@ -138,7 +149,8 @@ ts::BitrateMonitorPlugin::BitrateMonitorPlugin(TSP* tsp_) :
 
     option(u"alarm-command", 'a', STRING);
     help(u"alarm-command", u"'command'",
-         u"Command to be run when an alarm is detected (bitrate out of range).");
+         u"Command to run when the bitrate goes either out of range or back to normal. "
+         u"The command receives an additional string parameter containing an informational message.");
 
     option(u"time-interval", 't', UINT16);
     help(u"time-interval",
@@ -159,6 +171,36 @@ ts::BitrateMonitorPlugin::BitrateMonitorPlugin(TSP* tsp_) :
     help(u"periodic-bitrate",
          u"Always report bitrate at the specific interval in seconds, even if the "
          u"bitrate is in range.");
+
+    option(u"set-label-below", 0, INTEGER, 0, UNLIMITED_COUNT, 0, TSPacketMetadata::LABEL_MAX);
+    help(u"set-label-below", u"label1[-label2]",
+         u"Set the specified labels on all packets while the bitrate is below normal. "
+         u"Several --set-label-below options may be specified.");
+
+    option(u"set-label-go-below", 0, INTEGER, 0, UNLIMITED_COUNT, 0, TSPacketMetadata::LABEL_MAX);
+    help(u"set-label-go-below", u"label1[-label2]",
+         u"Set the specified labels on one packet when the bitrate goes below normal. "
+         u"Several --set-label-go-below options may be specified.");
+
+    option(u"set-label-above", 0, INTEGER, 0, UNLIMITED_COUNT, 0, TSPacketMetadata::LABEL_MAX);
+    help(u"set-label-above", u"label1[-label2]",
+         u"Set the specified labels on all packets while the bitrate is above normal. "
+         u"Several --set-label-above options may be specified.");
+
+    option(u"set-label-go-above", 0, INTEGER, 0, UNLIMITED_COUNT, 0, TSPacketMetadata::LABEL_MAX);
+    help(u"set-label-go-above", u"label1[-label2]",
+         u"Set the specified labels on one packet when the bitrate goes above normal. "
+         u"Several --set-label-go-above options may be specified.");
+
+    option(u"set-label-normal", 0, INTEGER, 0, UNLIMITED_COUNT, 0, TSPacketMetadata::LABEL_MAX);
+    help(u"set-label-normal", u"label1[-label2]",
+         u"Set the specified labels on all packets while the bitrate is normal (within range). "
+         u"Several --set-label-normal options may be specified.");
+
+    option(u"set-label-go-normal", 0, INTEGER, 0, UNLIMITED_COUNT, 0, TSPacketMetadata::LABEL_MAX);
+    help(u"set-label-go-normal", u"label1[-label2]",
+         u"Set the specified labels on one packet when the bitrate goes back to normal (within range). "
+         u"Several --set-label-go-normal options may be specified.");
 
     option(u"tag", 0, STRING);
     help(u"tag", u"'string'",
@@ -198,6 +240,12 @@ bool ts::BitrateMonitorPlugin::getOptions()
     _min_bitrate = intValue(u"min", DEFAULT_BITRATE_MIN);
     _max_bitrate = intValue(u"max", DEFAULT_BITRATE_MAX);
     _periodic_bitrate = intValue(u"periodic-bitrate", 0);
+    getIntValues(_labels_below, u"set-label-below");
+    getIntValues(_labels_normal, u"set-label-normal");
+    getIntValues(_labels_above, u"set-label-above");
+    getIntValues(_labels_go_below, u"set-label-go-below");
+    getIntValues(_labels_go_normal, u"set-label-go-normal");
+    getIntValues(_labels_go_above, u"set-label-go-above");
 
     if (_min_bitrate > _max_bitrate) {
         tsp->error(u"bad parameters, bitrate min (%'d) > max (%'d), exiting", {_min_bitrate, _max_bitrate});
@@ -234,6 +282,7 @@ bool ts::BitrateMonitorPlugin::start()
         _pkt_count[i] = 0;
     }
 
+    _labels_next.reset();
     _periodic_countdown = _periodic_bitrate;
     _last_bitrate_status = IN_RANGE;
     _last_second = ::time(nullptr);
@@ -243,24 +292,6 @@ bool ts::BitrateMonitorPlugin::start()
     tsp->setPacketTimeout(MilliSecPerSec);
 
     return true;
-}
-
-
-//----------------------------------------------------------------------------
-// Run the alarm command, if one was specified as the plugin option.
-// The given string parameter describes the alarm.
-//----------------------------------------------------------------------------
-
-void ts::BitrateMonitorPlugin::runAlarmCommand(const ts::UString& parameter)
-{
-    // Do nothing if alarm command was not specified
-    if (!_alarm_command.empty()) {
-        const UString completeCommand(_alarm_command + u" \"" + parameter + u'"');
-        // Flawfinder: ignore: system causes a new program to execute and is difficult to use safely.
-        if (::system(completeCommand.toUTF8().c_str()) != 0) {
-            tsp->error(u"unable to run alarm command %s", {completeCommand});
-        }
-    }
 }
 
 
@@ -304,21 +335,28 @@ void ts::BitrateMonitorPlugin::computeBitrate()
         switch (new_bitrate_status) {
             case LOWER:
                 alarmMessage += UString::Format(u"is lower than allowed minimum (%'d bits/s)", {_min_bitrate});
+                _labels_next |= _labels_go_below;
                 break;
             case IN_RANGE:
                 alarmMessage += UString::Format(u"is back in allowed range (%'d-%'d bits/s)", {_min_bitrate, _max_bitrate});
+                _labels_next |= _labels_go_normal;
                 break;
             case GREATER:
                 alarmMessage += UString::Format(u"is greater than allowed maximum (%'d bits/s)", {_max_bitrate});
+                _labels_next |= _labels_go_above;
                 break;
             default:
                 assert(false); // should not get there
         }
 
+        // Report alarm message as a tsp warning.
         tsp->warning(alarmMessage);
 
         // Call alarm script if defined, and pass the alarm message as parameter.
-        runAlarmCommand(alarmMessage);
+        // The command is run asynchronously, do not wait for completion.
+        if (!_alarm_command.empty()) {
+            ForkPipe::Launch(_alarm_command + u" \"" + alarmMessage + u'"', *tsp, ForkPipe::STDERR_ONLY, ForkPipe::STDIN_NONE);
+        }
 
         // Update status
         _last_bitrate_status = new_bitrate_status;
@@ -352,7 +390,7 @@ void ts::BitrateMonitorPlugin::checkTime()
 
         // We are no more at startup if the index cycles.
         if (_startup) {
-            _startup = !(_pkt_count_index == 0);
+            _startup = _pkt_count_index != 0;
         }
 
         _last_second = now;
@@ -386,6 +424,25 @@ ts::ProcessorPlugin::Status ts::BitrateMonitorPlugin::processPacket(TSPacket& pk
     // If packet's PID matches, increment the number of packets received during the current second.
     if (_full_ts || pkt.getPID() == _pid) {
         _pkt_count[_pkt_count_index]++;
+    }
+
+    // Set labels according to trigger.
+    pkt_data.setLabels(_labels_next);
+    _labels_next.reset();
+
+    // Set labels according to state.
+    switch (_last_bitrate_status) {
+        case LOWER:
+            pkt_data.setLabels(_labels_below);
+            break;
+        case IN_RANGE:
+            pkt_data.setLabels(_labels_normal);
+            break;
+        case GREATER:
+            pkt_data.setLabels(_labels_above);
+            break;
+        default:
+            assert(false); // should not get there
     }
 
     // Pass all packets
