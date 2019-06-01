@@ -80,6 +80,9 @@ public:
         return ts::UString::FromUTF8(utf8.get(), utf8Size);
     }
 
+    ARIBStringDecoder(const ARIBStringDecoder&) = delete;
+    ARIBStringDecoder& operator=(const ARIBStringDecoder&) = delete;
+
 private:
     arib_instance_t* _instance = nullptr;
     arib_decoder_t* _decoder = nullptr;
