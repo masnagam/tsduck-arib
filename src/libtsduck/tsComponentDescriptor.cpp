@@ -2,6 +2,7 @@
 //
 // TSDuck - The MPEG Transport Stream Toolkit
 // Copyright (c) 2005-2019, Thierry Lelegard
+// Copyright (c) 2019 Masayuki Nagamachi <masayuki.nagamachi@gmail.com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -113,7 +114,11 @@ void ts::ComponentDescriptor::deserialize(DuckContext& duck, const Descriptor& d
         stream_content = data[0] & 0x0F;
         component_type = data[1];
         component_tag = data[2];
+#if defined(TS_ARIB)
+        language_code.assignFromUTF8(reinterpret_cast<const char*>(data + 3), 3);
+#else
         language_code.assign(duck.fromDVB(data + 3, 3));
+#endif
         text.assign(duck.fromDVB(data + 6, size - 6));
     }
 }
