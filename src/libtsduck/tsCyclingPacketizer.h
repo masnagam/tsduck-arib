@@ -76,6 +76,7 @@ namespace ts {
     //!
     class TSDUCKDLL CyclingPacketizer: public Packetizer, private SectionProviderInterface
     {
+        TS_NOCOPY(CyclingPacketizer);
     public:
         //!
         //! Specify where stuffing applies.

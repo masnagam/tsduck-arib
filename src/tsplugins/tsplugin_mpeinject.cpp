@@ -55,6 +55,7 @@ TSDUCK_SOURCE;
 namespace ts {
     class MPEInjectPlugin: public ProcessorPlugin, private Thread
     {
+        TS_NOBUILD_NOCOPY(MPEInjectPlugin);
     public:
         // Implementation of plugin API
         MPEInjectPlugin(TSP*);
@@ -82,11 +83,6 @@ namespace ts {
 
         // Invoked in the context of the server thread.
         virtual void main() override;
-
-        // Inaccessible operations
-        MPEInjectPlugin() = delete;
-        MPEInjectPlugin(const MPEInjectPlugin&) = delete;
-        MPEInjectPlugin& operator=(const MPEInjectPlugin&) = delete;
     };
 }
 
@@ -100,6 +96,7 @@ TSPLUGIN_DECLARE_PROCESSOR(mpeinject, ts::MPEInjectPlugin)
 
 ts::MPEInjectPlugin::MPEInjectPlugin(TSP* tsp_) :
     ProcessorPlugin(tsp_, u"Inject an incoming UDP stream into MPE (Multi-Protocol Encapsulation)", u"[options] [address:]port"),
+    Thread(ThreadAttributes().setStackSize(SERVER_THREAD_STACK_SIZE)),
     _terminate(false),
     _mpe_pid(PID_NULL),
     _replace(false),

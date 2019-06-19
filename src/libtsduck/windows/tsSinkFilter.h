@@ -83,6 +83,7 @@ namespace ts {
     //!
     class SinkFilter : public ::IBaseFilter
     {
+        TS_NOBUILD_NOCOPY(SinkFilter);
     public:
         //!
         //! Constructor.
@@ -165,7 +166,7 @@ namespace ts {
         size_t           _max_messages;
         ByteBlock        _sample_buffer;     // Collected media samples
         size_t           _sample_offset;     // Next offset in _sample_buffer
-        Report& _report;
+        Report&          _report;
         ::LONG volatile  _ref_count;
         ::FILTER_STATE   _state;
         ::IFilterGraph*  _graph;
@@ -186,6 +187,7 @@ namespace ts {
     //!
     class SinkPin: public ::IPin, public ::IMemInputPin
     {
+        TS_NOBUILD_NOCOPY(SinkPin);
     public:
         //!
         //! Constructor.
@@ -241,7 +243,7 @@ namespace ts {
     private:
         bool             _flushing;
         bool             _input_overflow;
-        Report& _report;
+        Report&          _report;
         ::LONG volatile  _ref_count;
         SinkFilter*      _filter;
         ::IPin*          _partner;
@@ -254,6 +256,7 @@ namespace ts {
     //!
     class SinkEnumMediaTypes : public ::IEnumMediaTypes
     {
+        TS_NOBUILD_NOCOPY(SinkEnumMediaTypes);
     public:
         //!
         //! Constructor.
@@ -284,7 +287,7 @@ namespace ts {
         //! @endcond
 
     private:
-        Report& _report;
+        Report&          _report;
         ::LONG volatile  _ref_count;
         int              _next; // Next media type to enumerate
     };
@@ -295,6 +298,7 @@ namespace ts {
     //!
     class SinkEnumPins : public ::IEnumPins
     {
+        TS_NOBUILD_NOCOPY(SinkEnumPins);
     public:
         //!
         //! Constructor.
@@ -327,7 +331,7 @@ namespace ts {
 
     private:
         // There is only one pin to enumerate
-        Report& _report;
+        Report&          _report;
         ::LONG volatile  _ref_count;
         SinkFilter*      _filter;
         bool             _done;

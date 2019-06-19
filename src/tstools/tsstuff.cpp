@@ -36,6 +36,7 @@
 #include "tsTSFileOutput.h"
 #include "tsVariable.h"
 TSDUCK_SOURCE;
+TS_MAIN(MainCode);
 
 
 //-----------------------------------------------------------------------------
@@ -47,8 +48,10 @@ static const size_t   DEFAULT_TS_BUFFER_SIZE = 4 * 1024 * 1024;  // 4 MB
 static const size_t   MAX_TS_BUFFER_SIZE     = 16 * 1024 * 1024; // 16 MB
 static const uint64_t DEFAULT_MIN_INTERVAL   = 100;              // milliseconds
 
-struct Options: public ts::Args
+class Options: public ts::Args
 {
+    TS_NOBUILD_NOCOPY(Options);
+public:
     Options(int argc, char *argv[]);
     virtual ~Options();
 
@@ -191,9 +194,10 @@ struct TimeStamp
 
 class Stuffer
 {
+    TS_NOBUILD_NOCOPY(Stuffer);
 public:
     // Constructor
-    Stuffer (Options&);
+    Stuffer(Options&);
     virtual ~Stuffer();
 
     // Process the content
@@ -212,7 +216,7 @@ private:
     uint64_t                _additional_bits;         // Additional bits (less than one packet) to add in next segment.
 
     // Abort processing (invoked on fatal error, when message already reported)
-    void fatalError();
+    [[noreturn]] void fatalError();
 
     // Get name of time stamps
     ts::UString getTimeStampType() const {return _opt.dts_based ? u"DTS" : u"PCR";}
@@ -518,5 +522,3 @@ int MainCode(int argc, char *argv[])
     stuffer.stuff();
     return EXIT_SUCCESS;
 }
-
-TS_MAIN(MainCode)

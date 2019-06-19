@@ -56,6 +56,22 @@ ts::BinaryTable::BinaryTable() :
 
 
 //----------------------------------------------------------------------------
+// Move constructor.
+//----------------------------------------------------------------------------
+
+ts::BinaryTable::BinaryTable(BinaryTable&& table) noexcept :
+    _is_valid(table._is_valid),
+    _tid(table._tid),
+    _tid_ext(table._tid_ext),
+    _version(table._version),
+    _source_pid(table._source_pid),
+    _missing_count(table._missing_count),
+    _sections(std::move(table._sections))
+{
+}
+
+
+//----------------------------------------------------------------------------
 // Copy constructor. The sections are either shared between the
 // two tables or duplicated.
 //----------------------------------------------------------------------------
@@ -70,11 +86,12 @@ ts::BinaryTable::BinaryTable(const BinaryTable& table, CopyShare mode) :
     _sections()
 {
     switch (mode) {
-        case SHARE:
+        case SHARE: {
             // Copy the pointers, share the pointed sections
             _sections = table._sections;
             break;
-        case COPY:
+        }
+        case COPY: {
             _sections.resize(table._sections.size());
             for (size_t i = 0; i < _sections.size(); ++i) {
                 if (table._sections[i].isNull()) {
@@ -85,9 +102,11 @@ ts::BinaryTable::BinaryTable(const BinaryTable& table, CopyShare mode) :
                 }
             }
             break;
-        default:
+        }
+        default: {
             // should not get there
             assert(false);
+        }
     }
 }
 
@@ -126,6 +145,25 @@ ts::BinaryTable& ts::BinaryTable::operator=(const BinaryTable& table)
         _source_pid = table._source_pid;
         _missing_count = table._missing_count;
         _sections = table._sections;
+    }
+    return *this;
+}
+
+
+//----------------------------------------------------------------------------
+// Move assignment.
+//----------------------------------------------------------------------------
+
+ts::BinaryTable& ts::BinaryTable::operator=(BinaryTable&& table) noexcept
+{
+    if (&table != this) {
+        _is_valid = table._is_valid;
+        _tid = table._tid;
+        _tid_ext = table._tid_ext;
+        _version = table._version;
+        _source_pid = table._source_pid;
+        _missing_count = table._missing_count;
+        _sections = std::move(table._sections);
     }
     return *this;
 }
@@ -472,14 +510,14 @@ ts::xml::Element* ts::BinaryTable::toXML(DuckContext& duck, xml::Element* parent
     if (node == nullptr) {
         if (_sections[0]->isShortSection()) {
             // Create a short section node.
-            node = parent->addElement(TS_XML_GENERIC_SHORT_TABLE);
+            node = parent->addElement(AbstractTable::XML_GENERIC_SHORT_TABLE);
             node->setIntAttribute(u"table_id", _tid, true);
             node->setBoolAttribute(u"private", _sections[0]->isPrivateSection());
             node->addHexaText(_sections[0]->payload(), _sections[0]->payloadSize());
         }
         else {
             // Create a table with long sections.
-            node = parent->addElement(TS_XML_GENERIC_LONG_TABLE);
+            node = parent->addElement(AbstractTable::XML_GENERIC_LONG_TABLE);
             node->setIntAttribute(u"table_id", _tid, true);
             node->setIntAttribute(u"table_id_ext", _tid_ext, true);
             node->setIntAttribute(u"version", _version);
@@ -531,7 +569,7 @@ bool ts::BinaryTable::fromXML(DuckContext& duck, const xml::Element* node)
     }
 
     // There are two possible forms of generic tables.
-    if (node->name().similar(TS_XML_GENERIC_SHORT_TABLE)) {
+    if (node->name().similar(AbstractTable::XML_GENERIC_SHORT_TABLE)) {
         TID tid = 0xFF;
         bool priv = true;
         ByteBlock payload;
@@ -545,7 +583,7 @@ bool ts::BinaryTable::fromXML(DuckContext& duck, const xml::Element* node)
         return true;
     }
 
-    if (node->name().similar(TS_XML_GENERIC_LONG_TABLE)) {
+    if (node->name().similar(AbstractTable::XML_GENERIC_LONG_TABLE)) {
         TID tid = 0xFF;
         uint16_t tidExt = 0xFFFF;
         uint8_t version = 0;

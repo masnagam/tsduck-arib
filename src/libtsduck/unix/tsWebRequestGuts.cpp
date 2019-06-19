@@ -109,6 +109,7 @@ namespace {
 
 class ts::WebRequest::SystemGuts
 {
+     TS_NOBUILD_NOCOPY(SystemGuts);
 public:
     // Constructor with a reference to parent WebRequest.
     SystemGuts(WebRequest& request);
@@ -135,11 +136,6 @@ private:
     static size_t headerCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
     static size_t writeCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
     static int progressCallback(void *clientp, TS_CALLBACK_PARAM dltotal, TS_CALLBACK_PARAM dlnow, TS_CALLBACK_PARAM ultotal, TS_CALLBACK_PARAM ulnow);
-
-    // Inaccessible operations.
-    SystemGuts() = delete;
-    SystemGuts(const SystemGuts&) = delete;
-    SystemGuts& operator=(const SystemGuts&) = delete;
 };
 
 
@@ -185,6 +181,10 @@ bool ts::WebRequest::SystemGuts::init()
         _request._report.error(u"libcurl 'curl easy' initialization error");
         return false;
     }
+
+    // The curl_easy_setopt() function is a strange macro which triggers warnings.
+    TS_PUSH_WARNING()
+    TS_LLVM_NOWARNING(disabled-macro-expansion)
 
     // Setup the error message buffer.
     ::CURLcode status = ::curl_easy_setopt(_curl, CURLOPT_ERRORBUFFER, _error);
@@ -279,6 +279,9 @@ bool ts::WebRequest::SystemGuts::init()
         }
         status = ::curl_easy_setopt(_curl, CURLOPT_HTTPHEADER, _headers);
     }
+
+    // End of curl_easy_setopt() sequence.
+    TS_POP_WARNING()
 
     // Now process setopt error.
     if (status != ::CURLE_OK) {

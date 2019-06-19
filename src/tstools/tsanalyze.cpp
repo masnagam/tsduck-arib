@@ -37,14 +37,17 @@
 #include "tsInputRedirector.h"
 #include "tsPagerArgs.h"
 TSDUCK_SOURCE;
+TS_MAIN(MainCode);
 
 
 //----------------------------------------------------------------------------
 //  Command line options
 //----------------------------------------------------------------------------
 
-struct Options: public ts::Args
+class Options: public ts::Args
 {
+    TS_NOBUILD_NOCOPY(Options);
+public:
     Options(int argc, char *argv[]);
     virtual ~Options();
 
@@ -119,5 +122,3 @@ int MainCode(int argc, char *argv[])
 
     return EXIT_SUCCESS;
 }
-
-TS_MAIN(MainCode)

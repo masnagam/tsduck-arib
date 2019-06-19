@@ -37,6 +37,7 @@
 #include "tsTablesLogger.h"
 #include "tsPagerArgs.h"
 TSDUCK_SOURCE;
+TS_MAIN(MainCode);
 
 // With static link, enforce a reference to MPEG/DVB structures.
 #if defined(TSDUCK_STATIC_LIBRARY)
@@ -49,8 +50,10 @@ const ts::StaticReferencesDVB dependenciesForStaticLib;
 //  Command line options
 //----------------------------------------------------------------------------
 
-struct Options: public ts::Args
+class Options: public ts::Args
 {
+    TS_NOBUILD_NOCOPY(Options);
+public:
     Options(int argc, char *argv[]);
     virtual ~Options();
 
@@ -124,5 +127,3 @@ int MainCode(int argc, char *argv[])
 
     return logger.hasErrors() ? EXIT_FAILURE : EXIT_SUCCESS;
 }
-
-TS_MAIN(MainCode)

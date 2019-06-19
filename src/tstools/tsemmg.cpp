@@ -39,6 +39,7 @@
 #include "tsMonotonic.h"
 #include "tsSectionFile.h"
 TSDUCK_SOURCE;
+TS_MAIN(MainCode);
 
 namespace {
     // Command line default arguments.
@@ -66,6 +67,7 @@ namespace {
 
 class EMMGOptions: public ts::Args
 {
+    TS_NOBUILD_NOCOPY(EMMGOptions);
 public:
     EMMGOptions(int argc, char *argv[]);
     virtual ~EMMGOptions();
@@ -385,6 +387,7 @@ bool EMMGOptions::adjustBandwidth(uint16_t allocated)
 
 class EMMGSectionProvider : public ts::SectionProviderInterface
 {
+    TS_NOBUILD_NOCOPY(EMMGSectionProvider);
 public:
     // Constructor.
     EMMGSectionProvider(const EMMGOptions& opt);
@@ -403,11 +406,6 @@ private:
     uint8_t _payloadData;
     size_t  _nextSection;
     size_t  _cycleCount;
-
-    // Inaccessible operations.
-    EMMGSectionProvider() = delete;
-    EMMGSectionProvider(const EMMGSectionProvider&) = delete;
-    EMMGSectionProvider& operator=(const EMMGSectionProvider&) = delete;
 };
 
 // Constructor.
@@ -590,5 +588,3 @@ int MainCode(int argc, char *argv[])
     client.disconnect();
     return EXIT_SUCCESS;
 }
-
-TS_MAIN(MainCode)

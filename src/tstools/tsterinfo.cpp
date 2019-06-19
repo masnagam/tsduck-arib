@@ -35,6 +35,7 @@
 #include "tsHFBand.h"
 #include "tsTunerParametersBitrateDiffDVBT.h"
 TSDUCK_SOURCE;
+TS_MAIN(MainCode);
 
 
 //----------------------------------------------------------------------------
@@ -78,8 +79,10 @@ namespace {
 //  Command line options
 //----------------------------------------------------------------------------
 
-struct Options: public ts::Args
+class Options: public ts::Args
 {
+    TS_NOBUILD_NOCOPY(Options);
+public:
     Options(int argc, char *argv[]);
     virtual ~Options();
 
@@ -376,5 +379,3 @@ int MainCode(int argc, char *argv[])
 
     return opt.valid() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
-
-TS_MAIN(MainCode)

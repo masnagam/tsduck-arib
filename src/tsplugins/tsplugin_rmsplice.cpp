@@ -51,6 +51,7 @@ namespace ts {
             private SectionHandlerInterface,
             private PMTHandlerInterface
     {
+        TS_NOBUILD_NOCOPY(RMSplicePlugin);
     public:
         // Implementation of plugin API
         RMSplicePlugin(TSP*);
@@ -138,11 +139,6 @@ namespace ts {
         // Implementation of interfaces.
         virtual void handleSection(SectionDemux& demux, const Section& section) override;
         virtual void handlePMT(const PMT& table) override;
-
-        // Inaccessible operations
-        RMSplicePlugin() = delete;
-        RMSplicePlugin(const RMSplicePlugin&) = delete;
-        RMSplicePlugin& operator=(const RMSplicePlugin&) = delete;
     };
 }
 
@@ -576,7 +572,7 @@ ts::ProcessorPlugin::Status ts::RMSplicePlugin::processPacket(TSPacket& pkt, TSP
                                 }
 
                                 tsp->verbose(u"Immediate splice in on PID 0x%X (%d) at PTS %d (%.3f s)",
-                                    {pid, pid, state.lastPTS, (double) state.lastPTS / (double) SYSTEM_CLOCK_SUBFREQ});
+                                             {pid, pid, state.lastPTS, double(state.lastPTS) / double(SYSTEM_CLOCK_SUBFREQ)});
                             }
                         }
                     }
@@ -604,7 +600,7 @@ ts::ProcessorPlugin::Status ts::RMSplicePlugin::processPacket(TSPacket& pkt, TSP
                                 state.outStart = state.lastPTS;
 
                                 tsp->verbose(u"Immediate splice out on PID 0x%X (%d) at PTS %d (%.3f s)",
-                                    {pid, pid, state.lastPTS, (double) state.lastPTS / (double) SYSTEM_CLOCK_SUBFREQ});
+                                             {pid, pid, state.lastPTS, double(state.lastPTS) / double(SYSTEM_CLOCK_SUBFREQ)});
                             }
                         }
                     }

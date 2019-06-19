@@ -39,6 +39,7 @@
 #include "tsPMT.h"
 #include "tsStreamIdentifierDescriptor.h"
 TSDUCK_SOURCE;
+TS_MAIN(MainCode);
 
 #define DEFAULT_BUFFERED_PACKETS 10000
 
@@ -47,8 +48,10 @@ TSDUCK_SOURCE;
 //  Command line options
 //----------------------------------------------------------------------------
 
-struct Options: public ts::Args
+class Options: public ts::Args
 {
+    TS_NOBUILD_NOCOPY(Options);
+public:
     Options(int argc, char *argv[]);
     virtual ~Options();
 
@@ -485,5 +488,3 @@ int MainCode(int argc, char *argv[])
     file2.close (opt);
     return diff_count == 0 && opt.valid() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
-
-TS_MAIN(MainCode)

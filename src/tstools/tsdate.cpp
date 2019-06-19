@@ -40,6 +40,7 @@
 #include "tsTDT.h"
 #include "tsTOT.h"
 TSDUCK_SOURCE;
+TS_MAIN(MainCode);
 
 
 //----------------------------------------------------------------------------
@@ -48,6 +49,7 @@ TSDUCK_SOURCE;
 
 class Options: public ts::Args
 {
+    TS_NOBUILD_NOCOPY(Options);
 public:
     Options(int argc, char *argv[]);
     virtual ~Options();
@@ -102,12 +104,7 @@ Options::~Options()
 
 class TableHandler: public ts::TableHandlerInterface
 {
-private:
-    Options&          _opt;
-    ts::TablesDisplay _display;
-    bool              _tdt_ok;  // Finished TDT processing
-    bool              _tot_ok;  // Finished TOT processing
-
+    TS_NOBUILD_NOCOPY(TableHandler);
 public:
     // Constructor
     TableHandler(Options& opt) :
@@ -126,6 +123,12 @@ public:
 
     // This hook is invoked when a complete table is available.
     virtual void handleTable(ts::SectionDemux&, const ts::BinaryTable&) override;
+
+private:
+    Options&          _opt;
+    ts::TablesDisplay _display;
+    bool              _tdt_ok;  // Finished TDT processing
+    bool              _tot_ok;  // Finished TOT processing
 };
 
 
@@ -215,5 +218,3 @@ int MainCode(int argc, char *argv[])
 
     return EXIT_SUCCESS;
 }
-
-TS_MAIN(MainCode)

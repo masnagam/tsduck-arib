@@ -56,6 +56,7 @@ namespace ts {
     //!
     class TSDUCKDLL DektecControl: public Args
     {
+        TS_NOBUILD_NOCOPY(DektecControl);
     public:
         //!
         //! Constructor.
@@ -76,9 +77,6 @@ namespace ts {
         int execute();
 
     private:
-        DektecControl() = delete;
-        DektecControl& operator=(const DektecControl&) = delete;
-
         // Command line parameters.
         bool   _list_all;      //!< List all Dektec devices
         bool   _normalized;    //!< List in "normalized" format

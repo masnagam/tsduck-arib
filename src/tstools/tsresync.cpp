@@ -38,6 +38,7 @@
 #include "tsFatal.h"
 #include "tsMPEG.h"
 TSDUCK_SOURCE;
+TS_MAIN(MainCode);
 
 #define MIN_SYNC_SIZE       (1024)              // 1 kB
 #define MAX_SYNC_SIZE       (8 * 1024 * 1024)   // 8 MB
@@ -54,6 +55,7 @@ TSDUCK_SOURCE;
 
 class Options: public ts::Args
 {
+    TS_NOBUILD_NOCOPY(Options);
 public:
     Options(int argc, char *argv[]);
     virtual ~Options();
@@ -410,5 +412,3 @@ int MainCode(int argc, char *argv[])
 
     return resync.status() == RS_EOF ? EXIT_SUCCESS : EXIT_FAILURE;
 }
-
-TS_MAIN(MainCode)

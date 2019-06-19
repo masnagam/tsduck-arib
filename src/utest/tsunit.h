@@ -38,6 +38,39 @@
 //----------------------------------------------------------------------------
 
 #pragma once
+
+#if defined(_MSC_VER)
+// How to pass the system header files with /Wall
+#pragma warning(disable:4100)  // unreferenced formal parameter
+#pragma warning(disable:4251)  // 'classname' : class 'std::vector<_Ty>' needs to have dll-interface to be used by clients of class 'classname'
+#pragma warning(disable:4275)  // non dll-interface class 'std::_Container_base_aux' used as base for dll-interface class 'std::_Container_base_aux_alloc_real<_Alloc>'
+#pragma warning(disable:4355)  // 'this' : used in base member initializer list
+#pragma warning(disable:4365)  // conversion from 'type1' to 'type2', signed/unsigned mismatch
+#pragma warning(disable:4371)  // layout of class may have changed from a previous version of the compiler due to better packing of member 'xxxx'
+#pragma warning(disable:4514)  // unreferenced inline function has been removed
+#pragma warning(disable:4571)  // catch (...) semantics changed since Visual C++ 7.1; structured exceptions(SEH) are no longer caught
+#pragma warning(disable:4625)  // copy constructor was implicitly defined as deleted
+#pragma warning(disable:4626)  // assignment operator was implicitly defined as deleted
+#pragma warning(disable:4710)  // 'xxx' : function not inlined
+#pragma warning(disable:4711)  // function 'xxx' selected for automatic inline expansion
+#pragma warning(disable:4774)  // format string expected in argument N is not a string literal
+#pragma warning(disable:4820)  // 'n' bytes padding added after data member 'nnnnn'
+#pragma warning(disable:5026)  // move constructor was implicitly defined as deleted
+#pragma warning(disable:5027)  // move assignment operator was implicitly defined as deleted
+#pragma warning(disable:5031)  // bug in winioctl.h : #pragma warning(pop) : likely mismatch, popping warning state pushed in different file
+#pragma warning(disable:5032)  // bug in winioctl.h : detected #pragma warning(push) with no corresponding #pragma warning(pop)
+#pragma warning(disable:5039)  // pointer or reference to potentially throwing function passed to extern C function under -EHc. Undefined behavior may occur if this function throws an exception.
+#pragma warning(disable:5045)  // Compiler will insert Spectre mitigation for memory load if / Qspectre switch specified
+#endif
+
+#if defined(__llvm__)
+#pragma clang diagnostic ignored "-Wc++98-compat"           // Need C++11, don't care about C++98
+#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"  // Idem
+#pragma clang diagnostic ignored "-Wglobal-constructors"    // We use many global objects for test registration
+#pragma clang diagnostic ignored "-Wexit-time-destructors"  // Idem
+#pragma clang diagnostic ignored "-Wpadded"                 // Allow padding between class fields
+#endif
+
 #include <map>
 #include <list>
 #include <string>
@@ -149,16 +182,18 @@ namespace tsunit {
 
         // Inaccessible operations.
         Main() = delete;
+        Main(Main&&) = delete;
         Main(const Main&) = delete;
+        Main& operator=(Main&&) = delete;
         Main& operator=(const Main&) = delete;
     };
 }
 
 //! @cond nodoxygen
 // A macro to generate a unique name from a prefix and the source line number of the macro call.
-#define _TSUNIT_NAME1(prefix,num) prefix##num
-#define _TSUNIT_NAME2(prefix,num) _TSUNIT_NAME1(prefix,num)
-#define _TSUNIT_NAME(prefix) _TSUNIT_NAME2(prefix,__LINE__)
+#define TSUNIT_NAME1_(prefix,num) prefix##num
+#define TSUNIT_NAME2_(prefix,num) TSUNIT_NAME1_(prefix,num)
+#define TSUNIT_NAME(prefix) TSUNIT_NAME2_(prefix,__LINE__)
 //! @endcond
 
 //!
@@ -214,7 +249,7 @@ namespace tsunit {
 //! Add a test method which should raise an exception to the test suite inside a test class.
 //! @hideinitializer
 //! @param method Simple name of a test method. Must be a <code>void (*)()</code> method.
-//! @param exceptclass Name 
+//! @param exceptclass Name
 //! @see TSUNIT_TEST_BEGIN
 //!
 #define TSUNIT_TEST_EXCEPTION(method, exceptclass)  \
@@ -229,7 +264,7 @@ namespace tsunit {
             return suite;   \
         }                   \
     private:                \
-        typedef int _TSUNIT_NAME(unused)
+        typedef int TSUNIT_NAME(unused)
 
 //!
 //! Register a test class as a test suite.
@@ -238,7 +273,7 @@ namespace tsunit {
 //! @see TSUNIT_TEST_BEGIN
 //!
 #define TSUNIT_REGISTER(classname) \
-    static const tsunit::TestRepository::Register _TSUNIT_NAME(_Registrar)(classname::testSuite())
+    static const tsunit::TestRepository::Register TSUNIT_NAME(_Registrar)(classname::testSuite())
 
 //!
 //! Report a test case as failed.
@@ -279,7 +314,7 @@ namespace tsunit {
         std::string getBaseName() const;       // without leading and trailing "test", case-insentive
         std::string getLowerBaseName() const;  // lowercase version of base name
     private:
-        const std::string _name;
+        std::string _name;
     };
 
     // Definition of a test case (one method in a user test class).
@@ -291,7 +326,9 @@ namespace tsunit {
         virtual void run() = 0;
     private:
         TestCase() = delete;
+        TestCase(TestCase&&) = delete;
         TestCase(const TestCase&) = delete;
+        TestCase& operator=(TestCase&&) = delete;
         TestCase& operator=(const TestCase&) = delete;
     };
 
@@ -307,7 +344,9 @@ namespace tsunit {
         TestMethod _method;
         TEST* _test;
         TestCaseWrapper() = delete;
+        TestCaseWrapper(TestCaseWrapper&&) = delete;
         TestCaseWrapper(const TestCaseWrapper&) = delete;
+        TestCaseWrapper& operator=(TestCaseWrapper&&) = delete;
         TestCaseWrapper& operator=(const TestCaseWrapper&) = delete;
     };
 
@@ -328,7 +367,9 @@ namespace tsunit {
         int _linenumber;
         TEST* _test;
         TestExceptionWrapper() = delete;
+        TestExceptionWrapper(TestExceptionWrapper&&) = delete;
         TestExceptionWrapper(const TestExceptionWrapper&) = delete;
+        TestExceptionWrapper& operator=(TestExceptionWrapper&&) = delete;
         TestExceptionWrapper& operator=(const TestExceptionWrapper&) = delete;
     };
 
@@ -349,7 +390,9 @@ namespace tsunit {
         Test* _test;
         std::map<std::string, TestCase*> _testmap;
         TestSuite() = delete;
+        TestSuite(TestSuite&&) = delete;
         TestSuite(const TestSuite&) = delete;
+        TestSuite& operator=(TestSuite&&) = delete;
         TestSuite& operator=(const TestSuite&) = delete;
     };
 
@@ -372,7 +415,9 @@ namespace tsunit {
         static TestRepository* _instance;
         static void cleanupInstance();
         TestRepository();
+        TestRepository(TestRepository&&) = delete;
         TestRepository(const TestRepository&) = delete;
+        TestRepository& operator=(TestRepository&&) = delete;
         TestRepository& operator=(const TestRepository&) = delete;
     };
 
@@ -389,7 +434,9 @@ namespace tsunit {
         std::ostream& _out;
         size_t _passedCount;
         size_t _failedCount;
+        TestRunner(TestRunner&&) = delete;
         TestRunner(const TestRunner&) = delete;
+        TestRunner& operator=(TestRunner&&) = delete;
         TestRunner& operator=(const TestRunner&) = delete;
     };
 
@@ -461,7 +508,7 @@ namespace tsunit {
         static size_t getFailedCount() { return _failedCount; }
 
         // Assertion functions.
-        static void fail(const std::string& message, const char* sourcefile, int linenumber);
+        [[noreturn]] static void fail(const std::string& message, const char* sourcefile, int linenumber);
         static void condition(bool cond, const std::string& expression, const char* sourcefile, int linenumber);
 
         template<typename CHAR>
@@ -595,7 +642,7 @@ void tsunit::Assertions::equalString(const std::basic_string<CHAR>& expected, co
         std::string details3;
         if (diff < expected.size() && diff < actual.size()) {
             details3 = "differ at index " + toString(diff) +
-                ", expected '" + toUTF8(expected.substr(diff, 1)) + 
+                ", expected '" + toUTF8(expected.substr(diff, 1)) +
                 "', actual: '" + toUTF8(actual.substr(diff, 1)) + "'";
         }
         else {

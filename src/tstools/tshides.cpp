@@ -35,6 +35,7 @@
 #include "tsHFBand.h"
 #include "tsHiDesDevice.h"
 TSDUCK_SOURCE;
+TS_MAIN(MainCode);
 
 
 //----------------------------------------------------------------------------
@@ -43,6 +44,7 @@ TSDUCK_SOURCE;
 
 class HiDesOptions: public ts::Args
 {
+    TS_NOBUILD_NOCOPY(HiDesOptions);
 public:
     bool          count;       // Only display device count.
     bool          gain_range;  // Only display output gain range.
@@ -187,5 +189,3 @@ int MainCode(int argc, char *argv[])
 
     return opt.valid() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
-
-TS_MAIN(MainCode)

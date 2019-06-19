@@ -51,6 +51,7 @@ TSDUCK_SOURCE;
 namespace ts {
     class CutoffPlugin: public ProcessorPlugin, private Thread
     {
+        TS_NOBUILD_NOCOPY(CutoffPlugin);
     public:
         // Implementation of plugin API
         CutoffPlugin(TSP*);
@@ -73,11 +74,6 @@ namespace ts {
 
         // Invoked in the context of the server thread.
         virtual void main() override;
-
-        // Inaccessible operations
-        CutoffPlugin() = delete;
-        CutoffPlugin(const CutoffPlugin&) = delete;
-        CutoffPlugin& operator=(const CutoffPlugin&) = delete;
     };
 }
 
@@ -91,6 +87,7 @@ TSPLUGIN_DECLARE_PROCESSOR(cutoff, ts::CutoffPlugin)
 
 ts::CutoffPlugin::CutoffPlugin(TSP* tsp_) :
     ProcessorPlugin(tsp_, u"Set labels on TS packets upon reception of UDP messages", u"[options] [address:]port"),
+    Thread(ThreadAttributes().setStackSize(SERVER_THREAD_STACK_SIZE)),
     _terminate(false),
     _max_queued(DEFAULT_MAX_QUEUED_COMMANDS),
     _allowedRemote(),

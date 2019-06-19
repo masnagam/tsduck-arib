@@ -49,6 +49,7 @@ namespace ts {
     //!
     class TSDUCKDLL SingletonManager
     {
+        TS_NOCOPY(SingletonManager);
     public:
         //!
         //! Get the instance of the singleton of this class.
@@ -94,8 +95,7 @@ namespace ts {
         static classname* volatile _instance;                       \
         static void CleanupSingleton();                             \
         classname();                                                \
-        classname(const classname&) = delete;                       \
-        classname& operator=(const classname&) = delete
+        TS_NOCOPY(classname)
 
 //!
 //! @hideinitializer

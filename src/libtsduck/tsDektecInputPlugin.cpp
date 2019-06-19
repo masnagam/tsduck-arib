@@ -110,6 +110,7 @@ size_t ts::DektecInputPlugin::receive(TSPacket* buffer, size_t max_packets)
 
 class ts::DektecInputPlugin::Guts
 {
+    TS_NOCOPY(Guts);
 public:
     Guts();                           // Constructor.
     bool                is_started;   // Device started

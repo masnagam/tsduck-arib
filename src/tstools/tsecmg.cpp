@@ -44,6 +44,7 @@
 #include "tsVariable.h"
 #include "tsOneShotPacketizer.h"
 TSDUCK_SOURCE;
+TS_MAIN(MainCode);
 
 namespace {
     // Command line default arguments.
@@ -67,8 +68,10 @@ namespace {
 //  Command line options
 //----------------------------------------------------------------------------
 
-struct ECMGOptions: public ts::Args
+class ECMGOptions: public ts::Args
 {
+    TS_NOBUILD_NOCOPY(ECMGOptions);
+public:
     ECMGOptions(int argc, char *argv[]);
     virtual ~ECMGOptions();
 
@@ -230,6 +233,7 @@ ECMGOptions::ECMGOptions(int argc, char *argv[]) :
 
 class ECMGSharedData
 {
+    TS_NOBUILD_NOCOPY(ECMGSharedData);
 public:
     // Constructor.
     ECMGSharedData(const ECMGOptions& opt);
@@ -295,6 +299,7 @@ bool ECMGSharedData::closeChannel(uint16_t id)
 
 class ECMGClientHandler: public ts::Thread
 {
+    TS_NOBUILD_NOCOPY(ECMGClientHandler);
 public:
     // Constructor.
     // When deleteWhenTerminated is true, this object is automatically deleted
@@ -335,10 +340,6 @@ private:
     {
         return ts::Time::CurrentLocalTime().format(ts::Time::DATE | ts::Time::TIME);
     }
-
-    // Deleted operations.
-    ECMGClientHandler(const ECMGClientHandler&) = delete;
-    ECMGClientHandler& operator=(const ECMGClientHandler&) = delete;
 };
 
 
@@ -731,5 +732,3 @@ int MainCode(int argc, char *argv[])
 
     return EXIT_SUCCESS;
 }
-
-TS_MAIN(MainCode)

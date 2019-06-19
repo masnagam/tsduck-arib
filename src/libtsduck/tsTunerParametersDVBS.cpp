@@ -161,6 +161,8 @@ ts::UString ts::TunerParametersDVBS::shortDescription(int strength, int quality)
         case POL_RIGHT:
             desc += u" R";
             break;
+        case POL_AUTO:
+        case POL_NONE:
         default:
             break;
     }
@@ -444,6 +446,11 @@ bool ts::TunerParametersDVBS::convertToDektecModulation (int& modulation_type, i
         return false; // unsupported
     }
 
+    // Not all enum values used in switch, intentionally.
+    TS_PUSH_WARNING()
+    TS_LLVM_NOWARNING(switch-enum)
+    TS_MSC_NOWARNING(4061)
+
     // Determine convolution code rate
     switch (inner_fec) {
         case FEC_1_2:  param0 = DTAPI_MOD_1_2; break;
@@ -484,6 +491,8 @@ bool ts::TunerParametersDVBS::convertToDektecModulation (int& modulation_type, i
             return false; // unsupported
         }
     }
+
+    TS_POP_WARNING()
 
     return true;
 

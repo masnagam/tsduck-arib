@@ -12,6 +12,7 @@ TSDUCK_SOURCE;
 namespace ts {
     class SamplePlugin: public ProcessorPlugin
     {
+        TS_NOBUILD_NOCOPY(SamplePlugin);
     public:
         // Implementation of plugin API
         SamplePlugin(TSP*);
@@ -27,11 +28,6 @@ namespace ts {
 
         // Processing data:
         PacketCounter counter;  // Actual packet counter.
-
-        // Inaccessible operations
-        SamplePlugin() = delete;
-        SamplePlugin(const SamplePlugin&) = delete;
-        SamplePlugin& operator=(const SamplePlugin&) = delete;
     };
 }
 
@@ -59,6 +55,8 @@ ts::SamplePlugin::SamplePlugin(TSP* tsp_) :
 
 bool ts::SamplePlugin::getOptions()
 {
+    tsp->verbose(u"sample plugin: get options");
+
     doCount = present(u"count");
     return true;
 }
@@ -70,6 +68,8 @@ bool ts::SamplePlugin::getOptions()
 
 bool ts::SamplePlugin::start()
 {
+    tsp->verbose(u"sample plugin: start");
+
     counter = 0;
     return true;
 }
@@ -81,6 +81,8 @@ bool ts::SamplePlugin::start()
 
 bool ts::SamplePlugin::stop()
 {
+    tsp->verbose(u"sample plugin: stop");
+
     // Close resources, display final report, etc.
     if (doCount) {
         tsp->info(u"got %d packets", {counter});

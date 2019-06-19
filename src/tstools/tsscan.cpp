@@ -50,6 +50,7 @@
 #include "tsSysUtils.h"
 #include "tsNullReport.h"
 TSDUCK_SOURCE;
+TS_MAIN(MainCode);
 
 #define DEFAULT_PSI_TIMEOUT   10000 // ms
 #define DEFAULT_MIN_STRENGTH  10
@@ -63,6 +64,7 @@ TSDUCK_SOURCE;
 
 class ScanOptions: public ts::Args
 {
+    TS_NOBUILD_NOCOPY(ScanOptions);
 public:
     ScanOptions(int argc, char *argv[]);
     virtual ~ScanOptions();
@@ -89,11 +91,6 @@ public:
     ts::UString       channel_file;
     bool              update_channel_file;
     bool              default_channel_file;
-
-private:
-    // Inaccessible operations.
-    ScanOptions(const ScanOptions&) = delete;
-    ScanOptions& operator=(const ScanOptions&) = delete;
 };
 
 // Destructor.
@@ -292,6 +289,7 @@ ScanOptions::ScanOptions(int argc, char *argv[]) :
 
 class OffsetScanner
 {
+    TS_NOBUILD_NOCOPY(OffsetScanner);
 public:
     // Constructor: Perform scanning. Keep signal tuned on best offset.
     OffsetScanner(ScanOptions& opt, ts::Tuner& tuner, uint32_t channel);
@@ -493,6 +491,7 @@ bool OffsetScanner::tryOffset(int32_t offset)
 
 class ScanContext
 {
+    TS_NOBUILD_NOCOPY(ScanContext);
 public:
     // Contructor.
     ScanContext(ScanOptions&);
@@ -514,11 +513,6 @@ private:
 
     // NIT-based scanning
     void nitScan();
-
-    // Inaccessible methods.
-    ScanContext() = delete;
-    ScanContext(const ScanContext&) = delete;
-    ScanContext& operator=(const ScanContext&) = delete;
 };
 
 // Contructor.
@@ -731,5 +725,3 @@ int MainCode(int argc, char *argv[])
     ctx.main();
     return opt.valid() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
-
-TS_MAIN(MainCode)

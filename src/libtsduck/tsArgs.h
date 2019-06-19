@@ -286,6 +286,7 @@ namespace ts {
     //!
     class TSDUCKDLL Args: public Report
     {
+        TS_NOCOPY(Args);
     public:
         //!
         //! Internal application error in command line argument handling.
@@ -891,10 +892,6 @@ namespace ts {
         virtual void writeLog(int severity, const UString& message) override;
 
     private:
-        // Inaccessible operations.
-        Args(const Args&) = delete;
-        Args& operator=(const Args&) = delete;
-
         // Representation of an option value.
         class ArgValue
         {

@@ -42,6 +42,7 @@ namespace ts {
     //!
     class TSDUCKDLL DVBCSA2 : public CipherChaining
     {
+        TS_NOCOPY(DVBCSA2);
     public:
         static const size_t KEY_BITS = 64;             //!< DVB CSA-2 control words size in bits.
         static const size_t KEY_SIZE = KEY_BITS / 8;   //!< DVB CSA-2 control words size in bytes.

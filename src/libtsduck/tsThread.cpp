@@ -43,6 +43,7 @@ TSDUCK_SOURCE;
 ts::Thread::Thread() :
     _attributes(),
     _mutex(),
+    _typename(),
     _started(false),
     _waiting(false),
 #if defined(TS_WINDOWS)
@@ -62,6 +63,7 @@ ts::Thread::Thread() :
 ts::Thread::Thread(const ThreadAttributes& attributes) :
     _attributes(attributes),
     _mutex(),
+    _typename(),
     _started(false),
     _waiting(false),
 #if defined(TS_WINDOWS)
@@ -80,7 +82,42 @@ ts::Thread::Thread(const ThreadAttributes& attributes) :
 
 ts::Thread::~Thread()
 {
-    waitForTermination();
+    // Make sure that the parent class has completed the waitForTermination() or has never started the thread.
+    // First, get the started attribute but release
+    Guard lock(_mutex);
+    if (_started) {
+        std::cerr << std::endl
+                  << "*** Internal error, Thread subclass \"" << _typename
+                  << "\" did not wait for its termination, probably safe, maybe not..."
+                  << std::endl << std::endl << std::flush;
+        lock.unlock();
+        waitForTermination();
+    }
+}
+
+
+//----------------------------------------------------------------------------
+// Get/set the class type name.
+//----------------------------------------------------------------------------
+
+ts::UString ts::Thread::getTypeName() const
+{
+    Guard lock(_mutex);
+    const UString name(_typename);
+    return name;
+}
+
+void ts::Thread::setTypeName(const UString& name)
+{
+    Guard lock(_mutex);
+    if (!name.empty()) {
+        // An actual name is given, use it.
+        _typename = name;
+    }
+    else if (_typename.empty()) {
+        // No name already set, no name specified, use RTTI class name.
+        _typename = ClassName(typeid(*this));
+    }
 }
 
 
@@ -171,6 +208,9 @@ bool ts::Thread::start()
     if (_started) {
         return false;
     }
+
+    // Make sure the type name is defined, at least with the default name.
+    setTypeName();
 
 #if defined(TS_WINDOWS)
 

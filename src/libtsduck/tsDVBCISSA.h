@@ -45,6 +45,7 @@ namespace ts {
     //!
     class TSDUCKDLL DVBCISSA : public CBC<AES>
     {
+        TS_NOCOPY(DVBCISSA);
     public:
         //!
         //! DVB-CISSA control words size in bytes (AES-128 key size).

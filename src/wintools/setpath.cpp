@@ -50,10 +50,11 @@ TSDUCK_SOURCE;
 //  Command line options
 //----------------------------------------------------------------------------
 
-struct Options: public ts::Args
+class Options: public ts::Args
 {
+    TS_NOBUILD_NOCOPY(Options);
+public:
     Options(int argc, char *argv[]);
-
     enum UpdateCommand {APPEND, PREPEND, REMOVE};
     ts::UString   directory;
     UpdateCommand command;
@@ -150,6 +151,7 @@ int main(int argc, char* argv[])
         case Options::PREPEND:
             dirs.push_front(opt.directory);
             break;
+        case Options::REMOVE:
         default:
             // Nothing to do
             break;

@@ -464,6 +464,7 @@ void NetworkingTest::testSocketAddress()
 namespace {
     class TCPClient: public utest::TSUnitThread
     {
+        TS_NOBUILD_NOCOPY(TCPClient);
     private:
         uint16_t _portNumber;
     public:
@@ -589,6 +590,7 @@ void NetworkingTest::testTCPSocket()
 namespace {
     class UDPClient: public utest::TSUnitThread
     {
+        TS_NOBUILD_NOCOPY(UDPClient);
     private:
         uint16_t _portNumber;
     public:

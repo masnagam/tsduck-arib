@@ -43,6 +43,7 @@
 #include "tsResidentBuffer.h"
 #include "tsOutputPager.h"
 TSDUCK_SOURCE;
+TS_MAIN(MainCode);
 
 // With static link, enforce a reference to MPEG/DVB structures.
 #if defined(TSDUCK_STATIC_LIBRARY)
@@ -59,16 +60,13 @@ namespace ts {
     namespace tsp {
         class TSPInterruptHandler: public InterruptHandler
         {
+            TS_NOCOPY(TSPInterruptHandler);
         public:
             TSPInterruptHandler(AsyncReport* report = nullptr, PluginExecutor* first_plugin = nullptr);
             virtual void handleInterrupt() override;
         private:
             AsyncReport*    _report;
             PluginExecutor* _first_plugin;
-
-            // Inaccessible operations
-            TSPInterruptHandler(const TSPInterruptHandler&) = delete;
-            TSPInterruptHandler& operator=(const TSPInterruptHandler&) = delete;
         };
     }
 }
@@ -264,5 +262,3 @@ int MainCode(int argc, char *argv[])
 
     return EXIT_SUCCESS;
 }
-
-TS_MAIN(MainCode)

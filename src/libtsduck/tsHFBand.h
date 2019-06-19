@@ -55,6 +55,7 @@ namespace ts {
     //!
     class TSDUCKDLL HFBand
     {
+        TS_NOCOPY(HFBand);
     public:
         //!
         //! Type of frequency band.
@@ -288,8 +289,8 @@ namespace ts {
         class HFBandIndex: public StringifyInterface
         {
         public:
-            const BandType type;
-            const UString  region; // Lower case, no space.
+            BandType type;
+            UString  region; // Lower case, no space.
 
             // Constructor.
             HFBandIndex(BandType, const UString&);
@@ -333,9 +334,5 @@ namespace ts {
             UStringList   _allRegions;
             HFBandPtr     _voidBand;
         };
-
-        // Inaccessible operations.
-        HFBand(const HFBand&) = delete;
-        HFBand& operator=(const HFBand&) = delete;
     };
 }

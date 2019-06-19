@@ -48,7 +48,7 @@ public:
     virtual void afterTest() override;
 
     void testGuard();
-    void testAcquireFailed();
+    [[noreturn]] void testAcquireFailed();
     void testReleaseFailed();
 
     TSUNIT_TEST_BEGIN(GuardTest);
@@ -69,6 +69,7 @@ TSUNIT_REGISTER(GuardTest);
 namespace {
     class MutexTest: public ts::MutexInterface
     {
+        TS_NOCOPY(MutexTest);
     private:
         int _count;
         const bool _acquireResult;
@@ -103,10 +104,6 @@ namespace {
             _count--;
             return _failResult;
         }
-    private:
-        // Inaccessible operations
-        MutexTest(const MutexTest&) = delete;
-        MutexTest& operator=(const MutexTest&) = delete;
     };
 }
 

@@ -36,14 +36,17 @@
 #include "tsTSPacket.h"
 #include "tsPagerArgs.h"
 TSDUCK_SOURCE;
+TS_MAIN(MainCode);
 
 
 //----------------------------------------------------------------------------
 //  Command line options
 //----------------------------------------------------------------------------
 
-struct Options: public ts::Args
+class Options: public ts::Args
 {
+    TS_NOBUILD_NOCOPY(Options);
+public:
     Options(int argc, char *argv[]);
     virtual ~Options();
 
@@ -181,38 +184,40 @@ Options::~Options()
 // Perform the dump on one input file.
 //----------------------------------------------------------------------------
 
-void DumpFile(Options& opt, std::istream& in, std::ostream & out)
-{
-    if (opt.raw_file) {
-        // Raw dump of file
-        const uint32_t flags = (opt.dump_flags & 0x0000FFFF) | ts::UString::BPL | ts::UString::WIDE_OFFSET;
-        const size_t MAX_RAW_BPL = 16;
-        const size_t raw_bpl = (flags & ts::UString::BINARY) ? 8 : 16;  // Bytes per line in raw mode
-        size_t offset = 0;
-        while (in) {
-            int c;
-            size_t size;
-            uint8_t buffer[MAX_RAW_BPL];
-            for (size = 0; size < raw_bpl && (c = in.get()) != EOF; size++) {
-                buffer[size] = uint8_t(c);
-            }
-            out << ts::UString::Dump(buffer, size, flags, 0, raw_bpl, offset);
-            offset += size;
-        }
-    }
-    else {
-        // Read all packets in the file
-        ts::TSPacket pkt;
-        for (ts::PacketCounter packet_index = 0; packet_index < opt.max_packets && pkt.read(in, true, opt); packet_index++) {
-            if (opt.pids.test(pkt.getPID())) {
-                if (!opt.log) {
-                    out << std::endl << "* Packet " << ts::UString::Decimal(packet_index) << std::endl;
+namespace {
+    void DumpFile(Options& opt, std::istream& in, std::ostream & out)
+    {
+        if (opt.raw_file) {
+            // Raw dump of file
+            const uint32_t flags = (opt.dump_flags & 0x0000FFFF) | ts::UString::BPL | ts::UString::WIDE_OFFSET;
+            const size_t MAX_RAW_BPL = 16;
+            const size_t raw_bpl = (flags & ts::UString::BINARY) ? 8 : 16;  // Bytes per line in raw mode
+            size_t offset = 0;
+            while (in) {
+                int c;
+                size_t size;
+                uint8_t buffer[MAX_RAW_BPL];
+                for (size = 0; size < raw_bpl && (c = in.get()) != EOF; size++) {
+                    buffer[size] = uint8_t(c);
                 }
-                pkt.display(out, opt.dump_flags, opt.log ? 0 : 2, opt.log_size);
+                out << ts::UString::Dump(buffer, size, flags, 0, raw_bpl, offset);
+                offset += size;
             }
         }
-        if (!opt.log) {
-            out << std::endl;
+        else {
+            // Read all packets in the file
+            ts::TSPacket pkt;
+            for (ts::PacketCounter packet_index = 0; packet_index < opt.max_packets && pkt.read(in, true, opt); packet_index++) {
+                if (opt.pids.test(pkt.getPID())) {
+                    if (!opt.log) {
+                        out << std::endl << "* Packet " << ts::UString::Decimal(packet_index) << std::endl;
+                    }
+                    pkt.display(out, opt.dump_flags, opt.log ? 0 : 2, opt.log_size);
+                }
+            }
+            if (!opt.log) {
+                out << std::endl;
+            }
         }
     }
 }
@@ -253,5 +258,3 @@ int MainCode(int argc, char *argv[])
 
     return opt.valid() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
-
-TS_MAIN(MainCode)

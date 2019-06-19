@@ -42,6 +42,7 @@ namespace ts {
     //!
     class TSDUCKDLL StandaloneTableDemux: public SectionDemux, private TableHandlerInterface
     {
+        TS_NOBUILD_NOCOPY(StandaloneTableDemux);
     public:
         //!
         //! Constructor.

@@ -50,6 +50,7 @@ namespace ts {
     //!
     class TSDUCKDLL SCTE52_2003 : public DVS042<DES>
     {
+        TS_NOCOPY(SCTE52_2003);
     public:
         //!
         //! Constructor.
@@ -77,6 +78,7 @@ namespace ts {
     //!
     class TSDUCKDLL SCTE52_2008 : public DVS042<DES>
     {
+        TS_NOCOPY(SCTE52_2008);
     public:
         //!
         //! Constructor.

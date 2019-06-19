@@ -45,6 +45,7 @@ namespace ts {
     //!
     class TimeTrackerDemux: public AbstractDemux
     {
+        TS_NOBUILD_NOCOPY(TimeTrackerDemux);
     public:
         //!
         //! Explicit reference to superclass.
@@ -109,10 +110,10 @@ namespace ts {
             uint64_t duration() const;
 
         private:
-            const uint64_t _scale;  //!< Scale offset after wrapping up at max value.
-            uint64_t       _first;  //!< First value seen on PID (INVALID_PCR if none found).
-            uint64_t       _last;   //!< Last value seen on PID (INVALID_PCR if none found).
-            uint64_t       _offset; //!< Accumulated offsets after wrapping up at max value once or more.
+            uint64_t _scale;  //!< Scale offset after wrapping up at max value.
+            uint64_t _first;  //!< First value seen on PID (INVALID_PCR if none found).
+            uint64_t _last;   //!< Last value seen on PID (INVALID_PCR if none found).
+            uint64_t _offset; //!< Accumulated offsets after wrapping up at max value once or more.
         };
 
         typedef std::map<PID, TimeTracker> PIDContextMap;

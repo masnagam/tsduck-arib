@@ -41,6 +41,7 @@
 #include "tsInputRedirector.h"
 #include "tsOutputRedirector.h"
 TSDUCK_SOURCE;
+TS_MAIN(MainCode);
 
 // With static link, enforce a reference to MPEG/DVB structures.
 #if defined(TSDUCK_STATIC_LIBRARY)
@@ -53,8 +54,10 @@ const ts::StaticReferencesDVB dependenciesForStaticLib;
 //  Command line options
 //----------------------------------------------------------------------------
 
-struct Options: public ts::Args
+class Options: public ts::Args
 {
+    TS_NOBUILD_NOCOPY(Options);
+public:
     Options(int argc, char *argv[]);
     virtual ~Options();
 
@@ -68,11 +71,6 @@ struct Options: public ts::Args
     bool                  xmlModel;        // Display XML model instead of compilation.
     ts::xml::TweaksArgs   xmlTweaks;       // XML formatting options.
     const ts::DVBCharset* defaultCharset;  // Default DVB character set to interpret strings.
-
-private:
-    // Inaccessible operations.
-    Options(const Options&) = delete;
-    Options& operator=(const Options&) = delete;
 };
 
 // Destructor.
@@ -170,34 +168,36 @@ Options::Options(int argc, char *argv[]) :
 //  Display the XML model.
 //----------------------------------------------------------------------------
 
-bool DisplayModel(Options& opt)
-{
-    // Locate the model file.
-    const ts::UString inName(ts::SearchConfigurationFile(u"tsduck.tables.model.xml"));
-    if (inName.empty()) {
-        opt.error(u"XML model file not found");
-        return false;
-    }
-    opt.verbose(u"original model file is %s", {inName});
+namespace {
+    bool DisplayModel(Options& opt)
+    {
+        // Locate the model file.
+        const ts::UString inName(ts::SearchConfigurationFile(u"tsduck.tables.model.xml"));
+        if (inName.empty()) {
+            opt.error(u"XML model file not found");
+            return false;
+        }
+        opt.verbose(u"original model file is %s", {inName});
 
-    // Save to a file. Default to stdout.
-    ts::UString outName(opt.outfile);
-    if (opt.outdir) {
-        // Specified output is a directory, add default name.
-        outName.push_back(ts::PathSeparator);
-        outName.append(u"tsduck.tables.model.xml");
-    }
-    if (!outName.empty()) {
-        opt.verbose(u"saving model file to %s", {outName});
-    }
+        // Save to a file. Default to stdout.
+        ts::UString outName(opt.outfile);
+        if (opt.outdir) {
+            // Specified output is a directory, add default name.
+            outName.push_back(ts::PathSeparator);
+            outName.append(u"tsduck.tables.model.xml");
+        }
+        if (!outName.empty()) {
+            opt.verbose(u"saving model file to %s", {outName});
+        }
 
-    // Redirect input and output, exit in case of error.
-    ts::InputRedirector in(inName, opt);
-    ts::OutputRedirector out(outName, opt);
+        // Redirect input and output, exit in case of error.
+        ts::InputRedirector in(inName, opt);
+        ts::OutputRedirector out(outName, opt);
 
-    // Display / copy the XML model.
-    std::cout << std::cin.rdbuf();
-    return true;
+        // Display / copy the XML model.
+        std::cout << std::cin.rdbuf();
+        return true;
+    }
 }
 
 
@@ -205,59 +205,61 @@ bool DisplayModel(Options& opt)
 //  Process one file. Return true on success, false on error.
 //----------------------------------------------------------------------------
 
-bool ProcessFile(Options& opt, const ts::UString& infile)
-{
-    const ts::SectionFile::FileType inType = ts::SectionFile::GetFileType(infile);
-    const bool compile = opt.compile || inType == ts::SectionFile::XML;
-    const bool decompile = opt.decompile || inType == ts::SectionFile::BINARY;
-    const ts::SectionFile::FileType outType = compile ? ts::SectionFile::BINARY : ts::SectionFile::XML;
+namespace {
+    bool ProcessFile(Options& opt, const ts::UString& infile)
+    {
+        const ts::SectionFile::FileType inType = ts::SectionFile::GetFileType(infile);
+        const bool compile = opt.compile || inType == ts::SectionFile::XML;
+        const bool decompile = opt.decompile || inType == ts::SectionFile::BINARY;
+        const ts::SectionFile::FileType outType = compile ? ts::SectionFile::BINARY : ts::SectionFile::XML;
 
-    // Compute output file name with default file type.
-    ts::UString outname(opt.outfile);
-    if (outname.empty()) {
-        outname = ts::SectionFile::BuildFileName(infile, outType);
-    }
-    else if (opt.outdir) {
-        outname += ts::PathSeparator + ts::SectionFile::BuildFileName(ts::BaseName(infile), outType);
-    }
+        // Compute output file name with default file type.
+        ts::UString outname(opt.outfile);
+        if (outname.empty()) {
+            outname = ts::SectionFile::BuildFileName(infile, outType);
+        }
+        else if (opt.outdir) {
+            outname += ts::PathSeparator + ts::SectionFile::BuildFileName(ts::BaseName(infile), outType);
+        }
 
-    ts::SectionFile file(opt.duck);
-    file.setTweaks(opt.xmlTweaks.tweaks());
-    file.setCRCValidation(ts::CRC32::CHECK);
+        ts::SectionFile file(opt.duck);
+        file.setTweaks(opt.xmlTweaks.tweaks());
+        file.setCRCValidation(ts::CRC32::CHECK);
 
-    ts::ReportWithPrefix report(opt, ts::BaseName(infile) + u": ");
+        ts::ReportWithPrefix report(opt, ts::BaseName(infile) + u": ");
 
-    // Process the input file, starting with error cases.
-    if (!compile && !decompile) {
-        opt.error(u"don't know what to do with file %s, unknown file type, specify --compile or --decompile", {infile});
-        return false;
-    }
-    else if (compile && inType == ts::SectionFile::BINARY) {
-        opt.error(u"cannot compile binary file %s", {infile});
-        return false;
-    }
-    else if (decompile && inType == ts::SectionFile::XML) {
-        opt.error(u"cannot decompile XML file %s", {infile});
-        return false;
-    }
-    else if (compile) {
-        // Load XML file and save binary sections.
-        opt.verbose(u"Compiling %s to %s", {infile, outname});
-        return file.loadXML(infile, report) && file.saveBinary(outname, report);
-    }
-    else {
-        // Load binary sections and save XML file.
-        opt.verbose(u"Decompiling %s to %s", {infile, outname});
-        if (!file.loadBinary(infile, report)) {
+        // Process the input file, starting with error cases.
+        if (!compile && !decompile) {
+            opt.error(u"don't know what to do with file %s, unknown file type, specify --compile or --decompile", {infile});
             return false;
         }
-        if (opt.packAndFlush) {
-            const size_t packed = file.packOrphanSections();
-            if (packed > 0) {
-                opt.verbose(u"Packed %d incomplete tables, may be invalid", {packed});
-            }
+        else if (compile && inType == ts::SectionFile::BINARY) {
+            opt.error(u"cannot compile binary file %s", {infile});
+            return false;
         }
-        return file.saveXML(outname, report);
+        else if (decompile && inType == ts::SectionFile::XML) {
+            opt.error(u"cannot decompile XML file %s", {infile});
+            return false;
+        }
+        else if (compile) {
+            // Load XML file and save binary sections.
+            opt.verbose(u"Compiling %s to %s", {infile, outname});
+            return file.loadXML(infile, report) && file.saveBinary(outname, report);
+        }
+        else {
+            // Load binary sections and save XML file.
+            opt.verbose(u"Decompiling %s to %s", {infile, outname});
+            if (!file.loadBinary(infile, report)) {
+                return false;
+            }
+            if (opt.packAndFlush) {
+                const size_t packed = file.packOrphanSections();
+                if (packed > 0) {
+                    opt.verbose(u"Packed %d incomplete tables, may be invalid", {packed});
+                }
+            }
+            return file.saveXML(outname, report);
+        }
     }
 }
 
@@ -282,5 +284,3 @@ int MainCode(int argc, char *argv[])
     }
     return ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }
-
-TS_MAIN(MainCode)

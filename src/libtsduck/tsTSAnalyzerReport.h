@@ -44,6 +44,7 @@ namespace ts {
     //!
     class TSDUCKDLL TSAnalyzerReport: public TSAnalyzer
     {
+        TS_NOBUILD_NOCOPY(TSAnalyzerReport);
     public:
         //!
         //! Default constructor.

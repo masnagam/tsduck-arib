@@ -58,6 +58,7 @@ TSDUCK_SOURCE;
 namespace ts {
     class MergePlugin: public ProcessorPlugin, private Thread, private TableHandlerInterface
     {
+        TS_NOBUILD_NOCOPY(MergePlugin);
     public:
         // Implementation of plugin API
         MergePlugin (TSP*);
@@ -138,11 +139,6 @@ namespace ts {
                 dest.version = version;
             }
         }
-
-        // Inaccessible operations
-        MergePlugin() = delete;
-        MergePlugin(const MergePlugin&) = delete;
-        MergePlugin& operator=(const MergePlugin&) = delete;
     };
 }
 
@@ -156,6 +152,7 @@ TSPLUGIN_DECLARE_PROCESSOR(merge, ts::MergePlugin)
 
 ts::MergePlugin::MergePlugin(TSP* tsp_) :
     ProcessorPlugin(tsp_, u"Merge TS packets coming from the standard output of a command", u"[options] 'command'"),
+    Thread(ThreadAttributes().setStackSize(SERVER_THREAD_STACK_SIZE)),
     _merge_psi(false),
     _pcr_restamp(false),
     _ignore_conflicts(false),

@@ -42,6 +42,7 @@ namespace ts {
     //!
     class TSDUCKDLL OneShotPacketizer: public CyclingPacketizer
     {
+        TS_NOCOPY(OneShotPacketizer);
     public:
         //!
         //! Default constructor.

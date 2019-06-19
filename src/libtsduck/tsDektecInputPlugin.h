@@ -42,6 +42,7 @@ namespace ts {
     //!
     class TSDUCKDLL DektecInputPlugin: public InputPlugin
     {
+        TS_NOBUILD_NOCOPY(DektecInputPlugin);
     public:
         //!
         //! Constructor.
@@ -69,10 +70,5 @@ namespace ts {
 
         // Configure the LNB. Return true on success.
         bool configureLNB();
-
-        // Inaccessible operations
-        DektecInputPlugin() = delete;
-        DektecInputPlugin(const DektecInputPlugin&) = delete;
-        DektecInputPlugin& operator=(const DektecInputPlugin&) = delete;
     };
 }

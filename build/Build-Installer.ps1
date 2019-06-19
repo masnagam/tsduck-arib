@@ -108,12 +108,9 @@ Import-Module -Force -Name (Join-Path $PSScriptRoot Build-Common.psm1)
 
 # Get the project directories.
 $RootDir = (Split-Path -Parent $PSScriptRoot)
+$MsvcDir = (Join-Path $PSScriptRoot "msvc")
 $SrcDir = (Join-Path $RootDir "src")
 $InstallerDir = (Join-Path $RootDir "installers")
-
-# Get location of Visual Studio and project files.
-$VS = Search-VisualStudio
-$MsvcDir = $VS.MsvcDir
 
 # Apply defaults.
 if (-not $Win32 -and -not $Win64) {
@@ -173,10 +170,10 @@ if (-not $NoInstaller) {
 
 # Build binary installers.
 if (-not $NoInstaller -and $Win32) {
-    & $NsisExe /V2 "/DProjectDir=$MsvcDir" $NsisOptTeletext $NsisScript
+    & $NsisExe /V2 $NsisOptTeletext $NsisScript
 }
 if (-not $NoInstaller -and $Win64) {
-    & $NsisExe /V2 "/DProjectDir=$MsvcDir" $NsisOptTeletext /DWin64 $NsisScript
+    & $NsisExe /V2 $NsisOptTeletext /DWin64 $NsisScript
 }
 
 # A function to build a portable package.

@@ -43,6 +43,7 @@ namespace ts {
     //!
     class TSDUCKDLL IDSA : public DVS042<AES>
     {
+        TS_NOCOPY(IDSA);
     public:
         //!
         //! ATIS-IDSA control words size in bytes (AES-128 key size).
