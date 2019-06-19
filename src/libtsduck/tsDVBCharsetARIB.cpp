@@ -30,6 +30,10 @@
 
 #if defined(TS_ARIB)
 
+#if defined(__llvm__)
+#pragma clang diagnostic ignored "-Wpadded"
+#endif
+
 #include <memory>
 
 extern "C" {
