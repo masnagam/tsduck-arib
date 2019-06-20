@@ -47,6 +47,7 @@
     <ClInclude Include="..\..\src\libtsduck\tsArgsWithPlugins.h" />
     <ClInclude Include="..\..\src\libtsduck\tsARIBAudioComponentDescriptor.h" />
     <ClInclude Include="..\..\src\libtsduck\tsARIBSeriesDescriptor.h" />
+    <ClInclude Include="..\..\src\libtsduck\tsARIBTSInformationDescriptor.h" />
     <ClInclude Include="..\..\src\libtsduck\tsAssociationTagDescriptor.h" />
     <ClInclude Include="..\..\src\libtsduck\tsAsyncReport.h" />
     <ClInclude Include="..\..\src\libtsduck\tsAudioAttributes.h" />
@@ -554,6 +555,7 @@
     <ClCompile Include="..\..\src\libtsduck\tsArgsWithPlugins.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsARIBAudioComponentDescriptor.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsARIBSeriesDescriptor.cpp" />
+    <ClCompile Include="..\..\src\libtsduck\tsARIBTSInformationDescriptor.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsAssociationTagDescriptor.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsAsyncReport.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsAudioAttributes.cpp" />
