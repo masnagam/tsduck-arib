@@ -2,6 +2,7 @@
 //
 // TSDuck - The MPEG Transport Stream Toolkit
 // Copyright (c) 2005-2019, Thierry Lelegard
+// Copyright (c) 2019 Masayuki Nagamachi <masayuki.nagamachi@gmail.com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -283,6 +284,9 @@ namespace ts {
         STD_SCTE = 0x04,  //!< Defined by ANSI/SCTE.
         STD_ATSC = 0x08,  //!< Defined by ATSC.
         STD_ISDB = 0x10,  //!< Defined by ISDB.
+#if defined(TS_ARIB)
+        STD_ARIB = 0x20,  //!< Defined by ARIB.
+#endif
     };
 
     //!
@@ -1250,6 +1254,54 @@ namespace ts {
         DID_CMP_SELECTION       = 0xFC, //!< DID for Canal+ CMP_Selection_descriptor
         DID_DATA_COMPONENT_FD   = 0xFD, //!< DID for Canal+ data_component_descriptor
         DID_SYSTEM_MGMT_FE      = 0xFE, //!< DID for Canal+ system_management_descriptor
+
+#if defined(TS_ARIB)
+        // 5.3 Identifier of descriptors in ARIB STD-B10 v4.6-E2
+        //
+        // Disabled values have not been implemented, yet.
+        //
+        // DID_ARIB_HIERARCHICAL_TRANSMISSION     = 0xC0, //!< DID for ARIB Hierarchical transmission descriptor
+        // DID_ARIB_DIGITAL_COPY_CONTROL          = 0xC1, //!< DID for ARIB Digital copy control descriptor
+        // DID_ARIB_NETWORK_IDENTIFICATION        = 0xC2, //!< DID for ARIB Network identification descriptor
+        // DID_ARIB_PARTIAL_TRANSPORT_STREAM_TIME = 0xC3, //!< DID for ARIB Partial Transport Stream time descriptor
+        DID_ARIB_AUDIO_COMPONENT               = 0xC4, //!< DID for ARIB Audio component descriptor
+        // DID_ARIB_HYPERLINK                     = 0xC5, //!< DID for ARIB Hyperlink descriptor
+        // DID_ARIB_TARGET_REGION                 = 0xC6, //!< DID for ARIB Target region descriptor
+        // DID_ARIB_DATA_CONTENT                  = 0xC7, //!< DID for ARIB Data content descriptor
+        // DID_ARIB_VIDEO_DECODE_CONTROL          = 0xC8, //!< DID for ARIB Video decode control descriptor
+        // DID_ARIB_DOWNLOAD_CONTENT              = 0xC9, //!< DID for ARIB Download content descriptor
+        // DID_ARIB_CA_EMM_TS                     = 0xCA, //!< DID for ARIB CA_EMM_TS descriptor
+        // DID_ARIB_CA_CONTRACT_INFORMATION       = 0xCB, //!< DID for ARIB CA contract information descriptor
+        // DID_ARIB_CA_SERVICE                    = 0xCC, //!< DID for ARIB CA service descriptor
+        // DID_ARIB_TS_INFORMATION                = 0xCD, //!< DID for ARIB TS information descriptor
+        // DID_ARIB_EXTENDED_BROADCASTER          = 0xCE, //!< DID for ARIB Extended broadcaster descriptor
+        // DID_ARIB_LOGO_TRANSMISSION             = 0xCF, //!< DID for ARIB Logo transmission descriptor
+        // DID_ARIB_BASIC_LOCAL_EVENT             = 0xD0, //!< DID for ARIB Basic local event descriptor
+        // DID_ARIB_REFERENCE                     = 0xD1, //!< DID for ARIB Reference descriptor
+        // DID_ARIB_NODE_RELATION                 = 0xD2, //!< DID for ARIB Node relation descriptor
+        // DID_ARIB_SHORT_NODE_INFORMATION        = 0xD3, //!< DID for ARIB Short node information descriptor
+        // DID_ARIB_STC_REFERENCE                 = 0xD4, //!< DID for ARIB STC reference descriptor
+        DID_ARIB_SERIES                        = 0xD5, //!< DID for ARIB Series descriptor
+        // DID_ARIB_EVENT_GROUP                   = 0xD6, //!< DID for ARIB Event group descriptor
+        // DID_ARIB_SI_PARAMETER                  = 0xD7, //!< DID for ARIB SI parameter descriptor
+        // DID_ARIB_BROADCASTER_NAME              = 0xD8, //!< DID for ARIB Broadcaster name descriptor
+        // DID_ARIB_COMPONENT_GROUP               = 0xD9, //!< DID for ARIB Component group descriptor
+        // DID_ARIB_SI_PRIME_TS                   = 0xDA, //!< DID for ARIB SI prime TS descriptor
+        // DID_ARIB_BOARD_INFORMATION             = 0xDB, //!< DID for ARIB Board information descriptor
+        // DID_ARIB_LDT_LINKAGE                   = 0xDC, //!< DID for ARIB LDT linkage descriptor
+        // DID_ARIB_CONNECTED_TRANSMISSION        = 0xDD, //!< DID for ARIB Connected transmission descriptor
+        // DID_ARIB_CONTENT_AVAILABILITY          = 0xDE, //!< DID for ARIB Content availability descriptor
+        // DID_ARIB_FOR_TAG_VALUE_EXTENSION       = 0xDF, //!< DID for ARIB For tag value extension
+        // DID_ARIB_SERVICE_GROUP                 = 0xE0, //!< DID for ARIB Service group descriptor
+        // DID_ARIB_CAROUSEL_COMPATIBLE_COMPOSITE = 0xF7, //!< DID for ARIB Carousel compatible composite descriptor
+        // DID_ARIB_CONDITIONAL_PLAYBACK          = 0xF8, //!< DID for ARIB Conditional playback descriptor
+        // DID_ARIB_CABLE_TS_DIVISION_SYSTEM      = 0xF9, //!< DID for ARIB Cable TS division system descriptor
+        // DID_ARIB_TERRESTRIAL_DELIVERY_SYSTEM   = 0xFA, //!< DID for ARIB Terrestrial delivery system descriptor
+        // DID_ARIB_PARTIAL_RECEPTION             = 0xFB, //!< DID for ARIB Partial reception descripto
+        // DID_ARIB_EMERGENCY_INFORMATION         = 0xFC, //!< DID for ARIB Emergency information descriptor
+        // DID_ARIB_DATA_COMPONENT                = 0xFD, //!< DID for ARIB Data component descriptor
+        // DID_ARIB_SYSTEM_MANAGEMENT             = 0xFE, //!< DID for ARIB System management descriptor
+#endif
     };
 
     //---------------------------------------------------------------------

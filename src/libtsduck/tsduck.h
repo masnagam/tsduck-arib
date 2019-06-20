@@ -68,6 +68,8 @@
 #include "tsArgMix.h"
 #include "tsArgs.h"
 #include "tsArgsWithPlugins.h"
+#include "tsARIBAudioComponentDescriptor.h"
+#include "tsARIBSeriesDescriptor.h"
 #include "tsAssociationTagDescriptor.h"
 #include "tsAsyncReport.h"
 #include "tsAudioAttributes.h"

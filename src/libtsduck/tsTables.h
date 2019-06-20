@@ -66,6 +66,8 @@
 #include "tsApplicationSignallingDescriptor.h"
 #include "tsApplicationStorageDescriptor.h"
 #include "tsApplicationUsageDescriptor.h"
+#include "tsARIBAudioComponentDescriptor.h"
+#include "tsARIBSeriesDescriptor.h"
 #include "tsAssociationTagDescriptor.h"
 #include "tsAudioPreselectionDescriptor.h"
 #include "tsAudioStreamDescriptor.h"

@@ -43,6 +43,8 @@ HEADERS += \
     ../../../src/libtsduck/tsArgs.h \
     ../../../src/libtsduck/tsArgsTemplate.h \
     ../../../src/libtsduck/tsArgsWithPlugins.h \
+    ../../../src/libtsduck/tsARIBAudioComponentDescriptor.h \
+    ../../../src/libtsduck/tsARIBSeriesDescriptor.h \
     ../../../src/libtsduck/tsAssociationTagDescriptor.h \
     ../../../src/libtsduck/tsAsyncReport.h \
     ../../../src/libtsduck/tsAudioAttributes.h \
@@ -538,6 +540,8 @@ SOURCES += \
     ../../../src/libtsduck/tsArgMix.cpp \
     ../../../src/libtsduck/tsArgs.cpp \
     ../../../src/libtsduck/tsArgsWithPlugins.cpp \
+    ../../../src/libtsduck/tsARIBAudioComponentDescriptor.cpp \
+    ../../../src/libtsduck/tsARIBSeriesDescriptor.cpp \
     ../../../src/libtsduck/tsAssociationTagDescriptor.cpp \
     ../../../src/libtsduck/tsAsyncReport.cpp \
     ../../../src/libtsduck/tsAudioAttributes.cpp \

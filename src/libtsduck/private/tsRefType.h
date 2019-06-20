@@ -32,6 +32,8 @@
     REF_TYPE(ApplicationSignallingDescriptor);
     REF_TYPE(ApplicationStorageDescriptor);
     REF_TYPE(ApplicationUsageDescriptor);
+    REF_TYPE(ARIBAudioComponentDescriptor);
+    REF_TYPE(ARIBSeriesDescriptor);
     REF_TYPE(AssociationTagDescriptor);
     REF_TYPE(AudioPreselectionDescriptor);
     REF_TYPE(AudioStreamDescriptor);
