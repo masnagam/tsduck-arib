@@ -2,6 +2,7 @@
 //
 // TSDuck - The MPEG Transport Stream Toolkit
 // Copyright (c) 2005-2019, Thierry Lelegard
+// Copyright (c) 2019 Masayuki Nagamachi <masayuki.nagamachi@gmail.com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -64,6 +65,25 @@ namespace ts {
         //! Code point for DVB-encoded CR/LF in two-byte character sets.
         //!
         static constexpr uint16_t DVB_CODEPOINT_CRLF = 0xE08A;
+
+#if defined(TS_ARIB)
+        ///!
+        ///! This static function enables the ARIB mode.
+        ///!
+        ///! All characters are treated as encoded in the ARIB STD-B24 character
+        ///! encoding when the ARIB mode is enabled.
+        ///!
+        ///! This static function must be called before the first DuckContext is
+        ///! created.
+        ///!
+        ///! The ARIB mode is disabled by default.
+        static void EnableARIBMode();
+
+        ///!
+        ///! This static function checks whether the ARIB mode is enabled or
+        ///! not.
+        static bool IsARIBMode();
+#endif
 
         //!
         //! This static function gets the character coding table at the beginning of a DVB string.

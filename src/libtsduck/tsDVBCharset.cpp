@@ -43,10 +43,24 @@ constexpr uint16_t ts::DVBCharset::DVB_CODEPOINT_CRLF;
 // Get the character coding table at the beginning of a DVB string.
 //----------------------------------------------------------------------------
 
+#if defined(TS_ARIB)
+namespace { bool g_arib_mode = false; }
+
+void ts::DVBCharset::EnableARIBMode()
+{
+    g_arib_mode = true;
+}
+
+bool ts::DVBCharset::IsARIBMode()
+{
+    return g_arib_mode;
+}
+#endif
+
 bool ts::DVBCharset::GetCharCodeTable(uint32_t& code, size_t& codeSize, const uint8_t* dvb, size_t dvbSize)
 {
 #if defined(TS_ARIB)
-    if (::getenv("TSDUCK_ENFORCE_ARIB_STD_B24") != nullptr) {
+    if (IsARIBMode()) {
         code = 0x081B24;
         codeSize = 0;
         return true;

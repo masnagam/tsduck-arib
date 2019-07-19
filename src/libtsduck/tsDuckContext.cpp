@@ -2,6 +2,7 @@
 //
 // TSDuck - The MPEG Transport Stream Toolkit
 // Copyright (c) 2005-2019, Thierry Lelegard
+// Copyright (c) 2019 Masayuki Nagamachi <masayuki.nagamachi@gmail.com>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,6 +34,7 @@
 #include "tsHFBand.h"
 #include "tsCerrReport.h"
 #include "tsDVBCharset.h"
+#include "tsDVBCharsetARIB.h"
 #include "tsArgs.h"
 TSDUCK_SOURCE;
 
@@ -379,6 +381,12 @@ bool ts::DuckContext::loadOptions(Args& args)
             }
         }
     }
+
+#if defined(TS_ARIB)
+    if (DVBCharset::IsARIBMode()) {
+        _dvbCharsetIn = &DVBCharsetARIB::ARIB_STD_B24;
+    }
+#endif
 
     // Options relating to default UHF/VHF region.
     if (_definedCmdOptions & CMD_HF_REGION) {
