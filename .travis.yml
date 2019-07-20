@@ -1,0 +1,25 @@
+os: osx
+osx_image: xcode10.2
+
+language: cpp
+compiler: clang
+
+addons:
+  homebrew:
+    packages:
+      #- pcsc-lite  # NOPCSC=1
+      - doxygen
+      - graphviz
+      - gnu-sed
+      - grep
+      - dos2unix
+
+before_script:
+  - mkdir -p /tmp/aribb24
+  - curl -sSL https://github.com/masnagam/aribb24/archive/master.tar.gz | tar -zx -C /tmp/aribb24 --strip-components=1
+  - (cd /tmp/aribb24; ./bootstrap && ./configure --without-libpng && make && sudo make install)
+  - rm -rf /tmp/aribb24
+
+script:
+  - make ARIB=1 NODTAPI=1 NOPCSC=1
+  - make ARIB=1 NODTAPI=1 NOPCSC=1 test
