@@ -60,6 +60,7 @@ ts::ARIBSeriesDescriptor::ARIBSeriesDescriptor() :
     repeat_label(0),
     program_pattern(0),
     expire_date_valid(false),
+    expire_date(),
     episode_number(0),
     last_episode_number(0),
     series_name()

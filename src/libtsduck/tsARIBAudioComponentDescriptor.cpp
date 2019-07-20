@@ -64,6 +64,7 @@ ts::ARIBAudioComponentDescriptor::ARIBAudioComponentDescriptor() :
     es_multi_lingual(false),
     main_component(false),
     quality_indicator(0),
+    sampling_rate(0),
     language_code(),
     language_code2(),
     text()
