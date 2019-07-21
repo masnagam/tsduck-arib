@@ -46,10 +46,9 @@ $ make install SYSPREFIX=/usr/local ARIB=1
 $ make install-devel SYSPREFIX=/usr/local ARIB=1
 ```
 
-tsduck-arib supports several build options.  See [./src/doc/building.md] for
-details.
+tsduck-arib supports several build options.  See [building.md] for details.
 
-[./src/doc/building.md]: ./src/doc/building.md
+[building.md]: src/doc/building.md
 
 ## Modifications
 
@@ -71,7 +70,7 @@ in several tests frequently due to insufficient time precision.
 
 The tests assume a time error less than 50ms.  But it's impossible to guarantee
 the maximum wait time of threads/processes in a container running on a CI
-service.
+service, especially on [Travis CI] for macOS build.
 
 There are several solutions to fix the test failures:
 
@@ -105,4 +104,4 @@ But functions depending on the pthreads don't work due to an incompatibility
 with the pthreads API on Alpine Linux.  The incompatibility causes an assertion
 failure at [L184 in utestMessageQueue.cpp].
 
-[L184 in utestMessageQueue.cpp]: ./src/utest/utestMessageQueue.cpp#184
+[L184 in utestMessageQueue.cpp]: ./src/utest/utestMessageQueue.cpp#L184
