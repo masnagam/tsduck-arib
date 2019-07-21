@@ -2,6 +2,9 @@
 
 > A TSDuck fork working with Japanese TV broadcast contents
 
+![linux-build](https://img.shields.io/circleci/build/github/masnagam/tsduck-arib/master.svg?label=linux-build)
+![Travis (.com) branch](https://img.shields.io/travis/com/masnagam/tsduck-arib/master.svg?label=macos-build)
+
 ## How to build with ARIB support
 
 tsduck-arib uses aribb24 for ARIB STD-B24 character encoding support.  Install
