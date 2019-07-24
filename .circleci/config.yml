@@ -10,9 +10,9 @@ jobs:
       - run:
           command: |
             apt-get update
-            apt-get install -y curl git
-            apt-get install -y g++ dpkg-dev doxygen dos2unix graphviz libcurl4-openssl-dev
-            apt-get install -y autoconf automake libtool pkg-config
+            apt-get install -y --no-install-recommends ca-certificates curl git
+            apt-get install -y --no-install-recommends gcc g++ dos2unix libcurl4-openssl-dev make
+            apt-get install -y --no-install-recommends autoconf automake libtool pkg-config
       - run:
           command: |
             mkdir -p /tmp/aribb24
@@ -50,5 +50,5 @@ jobs:
             make test ARIB=1 NODTAPI=1 NOPCSC=1
       - run:
           command: |
-            make install SYSPREFIX=/usr/local ARIB=1 NODTAPI=1 NOPCSC=1
-            make install-devel SYSPREFIX=/usr/local ARIB=1 NODTAPI=1 NOPCSC=1
+            make install SYSPREFIX=/usr ARIB=1 NODTAPI=1 NOPCSC=1
+            make install-devel SYSPREFIX=/usr ARIB=1 NODTAPI=1 NOPCSC=1

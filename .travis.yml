@@ -8,8 +8,6 @@ addons:
   homebrew:
     packages:
       #- pcsc-lite  # NOPCSC=1
-      - doxygen
-      - graphviz
       - gnu-sed
       - grep
       - dos2unix
@@ -17,9 +15,15 @@ addons:
 before_script:
   - mkdir -p /tmp/aribb24
   - curl -sSL https://github.com/masnagam/aribb24/archive/master.tar.gz | tar -zx -C /tmp/aribb24 --strip-components=1
-  - (cd /tmp/aribb24; ./bootstrap && ./configure --without-libpng && make && sudo make install)
+  - (cd /tmp/aribb24; ./bootstrap)
+  - (cd /tmp/aribb24; ./configure --prefix=/usr/local --without-libpng)
+  - (cd /tmp/aribb24; make && sudo make install)
   - rm -rf /tmp/aribb24
 
 script:
   - make ARIB=1 NODTAPI=1 NOPCSC=1
   - make ARIB=1 NODTAPI=1 NOPCSC=1 test
+
+after_success:
+  - make install SYSPREFIX=/usr/local ARIB=1 NODTAPI=1 NOPCSC=1
+  - make install-devel SYSPREFIX=/usr/local ARIB=1 NODTAPI=1 NOPCSC=1
