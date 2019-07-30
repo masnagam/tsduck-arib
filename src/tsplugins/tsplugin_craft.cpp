@@ -51,7 +51,7 @@ namespace ts {
         CraftInput(TSP*);
         virtual bool getOptions() override;
         virtual bool start() override;
-        virtual size_t receive(TSPacket*, size_t) override;
+        virtual size_t receive(TSPacket*, TSPacketMetadata*, size_t) override;
         virtual bool abortInput() override { return true; }
 
     private:
@@ -90,7 +90,10 @@ namespace ts {
         bool      _clearESPriority;
         bool      _resizePayload;
         size_t    _payloadSize;
+        bool      _noPayload;
+        bool      _pesPayload;
         ByteBlock _payloadPattern;
+        size_t    _offsetPattern;
         ByteBlock _privateData;
         bool      _clearPrivateData;
         bool      _clearPCR;
@@ -169,7 +172,7 @@ ts::CraftInput::CraftInput(TSP* tsp_) :
          u"See \"tsp --help\" for more details on \"joint termination\".");
 
     option(u"no-payload");
-    help(u"no-payload", u"Do not use a payload, equivalent to --payload-size 0.");
+    help(u"no-payload", u"Do not use a payload.");
 
     option(u"payload-pattern", 0, STRING);
     help(u"payload-pattern",
@@ -181,6 +184,8 @@ ts::CraftInput::CraftInput(TSP* tsp_) :
     help(u"payload-size", u"size",
          u"Specify the size of the packet payload in bytes. "
          u"When necessary, an adaptation field is created. "
+         u"Note that --payload-size 0 specifies that a payload exists with a zero size. "
+         u"This is different from --no-payload which also specifies that the payload does not exist. "
          u"By default, the payload uses all free space in the packet.");
 
     option(u"pcr", 0, UNSIGNED);
@@ -239,11 +244,12 @@ bool ts::CraftInput::getOptions()
     const uint64_t opcr = intValue<uint64_t>(u"opcr", INVALID_PCR);
     const uint8_t spliceCountdown = intValue<uint8_t>(u"splice-countdown");
     const bool hasSplicing = present(u"splice-countdown");
-    const bool fullPayload = !present(u"no-payload") && !present(u"payload-size");
+    const bool noPayload = present(u"no-payload");
+    const bool fullPayload = !noPayload && !present(u"payload-size"); // payload uses all available size
     size_t payloadSize = intValue<size_t>(u"payload-size");
 
     // Check consistency of options.
-    if (payloadSize > 0 && present(u"no-payload")) {
+    if (payloadSize > 0 && noPayload) {
         tsp->error(u"options --no-payload and --payload-size are mutually exclusive");
         return false;
     }
@@ -318,7 +324,7 @@ bool ts::CraftInput::getOptions()
     _packet.b[3] =
         uint8_t((scrambling & 0x03) << 6) |
         (afSize > 0 ? 0x20 : 0x00) |
-        (payloadSize > 0 ? 0x10 : 0x00) |
+        (payloadSize > 0 || !noPayload ? 0x10 : 0x00) |
         (_initCC & 0x0F);
 
     // Build adaptation field.
@@ -388,7 +394,7 @@ bool ts::CraftInput::start()
 // Input method
 //----------------------------------------------------------------------------
 
-size_t ts::CraftInput::receive(TSPacket* buffer, size_t maxPackets)
+size_t ts::CraftInput::receive(TSPacket* buffer, TSPacketMetadata* pkt_data, size_t maxPackets)
 {
     // Previous number of generated packets.
     const PacketCounter previousCount = tsp->pluginPackets();
@@ -430,7 +436,10 @@ ts::CraftPlugin::CraftPlugin(TSP* tsp_) :
     _clearESPriority(false),
     _resizePayload(false),
     _payloadSize(0),
+    _noPayload(false),
+    _pesPayload(false),
     _payloadPattern(),
+    _offsetPattern(0),
     _privateData(),
     _clearPrivateData(false),
     _clearPCR(false),
@@ -482,7 +491,7 @@ ts::CraftPlugin::CraftPlugin(TSP* tsp_) :
     help(u"clear-es-priority", u"Clear the elementary_stream_priority_indicator in the packets.");
 
     option(u"no-payload");
-    help(u"no-payload", u"Remove the payload, equivalent to --payload-size 0.");
+    help(u"no-payload", u"Remove the payload.");
 
     option(u"payload-pattern", 0, STRING);
     help(u"payload-pattern",
@@ -490,13 +499,28 @@ ts::CraftPlugin::CraftPlugin(TSP* tsp_) :
          u"The value must be a string of hexadecimal digits specifying any number of bytes. "
          u"The pattern is repeated to fill the payload.");
 
-    option(u"payload-size", 0, INTEGER, 0, 1, 0, 184);
+    option(u"payload-size", 0, INTEGER, 0, 1, 0, PKT_SIZE - 4);
     help(u"payload-size", u"size",
          u"Resize the packet payload to the specified value in bytes. "
          u"When necessary, an adaptation field is created or enlarged. "
          u"Without --payload-pattern, the existing payload is either shrunk or enlarged. "
          u"When an existing payload is shrunk, the end of the payload is truncated. "
-         u"When an existing payload is enlarged, its end is padded with 0xFF bytes. ");
+         u"When an existing payload is enlarged, its end is padded with 0xFF bytes. "
+         u"Note that --payload-size 0 specifies that a payload exists with a zero size. "
+         u"This is different from --no-payload which also specifies that the payload does not exist.");
+
+    option(u"offset-pattern", 0, INTEGER, 0, 1, 0, PKT_SIZE - 4);
+    help(u"offset-pattern",
+         u"Specify starting offset in payload when using --payload-pattern. By default, "
+         u"the pattern replacement starts at the beginning of the packet payload.");
+
+    option(u"pes-payload");
+    help(u"pes-payload",
+         u"With this option, the modified payload is the PES payload, not the TS payload. "
+         u"When the TS packet does not contain the start of a PES packet, the TS payload is not modified. "
+         u"With --payload-size, the TS payload is resized so that the part of the PES payload which is in "
+         u"the TS packet gets the specified size. "
+         u"With --payload-pattern and --offset-pattern, the pattern is applied inside the PES payload.");
 
     option(u"pcr", 0, UNSIGNED);
     help(u"pcr", u"Set this PCR value in the packets. Space is required in the adaptation field.");
@@ -571,8 +595,11 @@ bool ts::CraftPlugin::getOptions()
     _clearTransportPriority = present(u"clear-priority");
     _setESPriority = present(u"es-priority");
     _clearESPriority = present(u"clear-es-priority");
-    _resizePayload = present(u"payload-size") || present(u"no-payload");
+    _noPayload = present(u"no-payload");
+    _resizePayload = present(u"payload-size") || _noPayload;
     _payloadSize = intValue<size_t>(u"payload-size", 0);
+    _pesPayload = present(u"pes-payload");
+    _offsetPattern = intValue<size_t>(u"offset-pattern", 0);
     _clearPCR = present(u"no-pcr");
     _newPCR = intValue<uint64_t>(u"pcr", INVALID_PCR);
     _clearOPCR = present(u"no-opcr");
@@ -592,6 +619,11 @@ bool ts::CraftPlugin::getOptions()
     _clearSpliceCountdown = present(u"no-splice-countdown");
     _newSpliceCountdown = intValue<uint8_t>(u"splice-countdown");
     _clearPrivateData = present(u"no-private-data");
+
+    if (_payloadSize > 0 && _noPayload) {
+        tsp->error(u"options --no-payload and --payload-size are mutually exclusive");
+        return false;
+    }
 
     if (!value(u"payload-pattern").hexaDecode(_payloadPattern)) {
         tsp->error(u"invalid hexadecimal payload pattern");
@@ -670,9 +702,16 @@ ts::ProcessorPlugin::Status ts::CraftPlugin::processPacket(TSPacket& pkt, TSPack
         packPESHeader(pkt);
     }
 
+    // Now modify the payload.
+    // With --pes-payload, we may do that only if the TS contains the start of a PES packet with some PES payload.
+    const size_t pesHeaderSize = pkt.getPESHeaderSize();
+    const bool pesPayloadPresent = pesHeaderSize > 0 && pkt.getPayloadSize() > pesHeaderSize;
+    const bool mayUpdatePayload = !_pesPayload || pesPayloadPresent;
+    const size_t payloadBase = _pesPayload ? pesHeaderSize : 0;
+
     // If the payload must be resized to a specific size, do it now.
-    if (_resizePayload && !pkt.setPayloadSize(_payloadSize, true, 0xFF)) {
-        tsp->warning(u"packet %'d: cannot resize payload to %'d bytes", {tsp->pluginPackets(), _payloadSize});
+    if (mayUpdatePayload && _resizePayload && !pkt.setPayloadSize(payloadBase + _payloadSize, true, 0xFF)) {
+        tsp->warning(u"packet %'d: cannot resize %s payload to %'d bytes", {tsp->pluginPackets(), _pesPayload ? u"PES" : u"TS", _payloadSize});
     }
 
     // Check if we are allowed to shrink the payload to any value.
@@ -705,12 +744,24 @@ ts::ProcessorPlugin::Status ts::CraftPlugin::processPacket(TSPacket& pkt, TSPack
     }
 
     // Fill payload with pattern.
-    if (!_payloadPattern.empty()) {
-        uint8_t* data = pkt.getPayload();
+    if (mayUpdatePayload && !_payloadPattern.empty()) {
+        uint8_t* data = pkt.getPayload() + payloadBase + _offsetPattern;
         while (data < pkt.b + PKT_SIZE) {
             const size_t size = std::min<size_t>(_payloadPattern.size(), pkt.b + PKT_SIZE - data);
             ::memcpy(data, _payloadPattern.data(), size);
             data += size;
+        }
+    }
+
+    // If the payload was explicitly resized to zero, set or reset payload presence.
+    if (_resizePayload && _payloadSize == 0 && pkt.getPayloadSize() == 0) {
+        if (_noPayload) {
+            // Was resized with --no-payload, clear payload existence.
+            pkt.b[3] &= ~0x10;
+        }
+        else {
+            // Was resized with --payload-size 0, set payload existence (even if empty).
+            pkt.b[3] |= 0x10;
         }
     }
 
@@ -724,84 +775,34 @@ ts::ProcessorPlugin::Status ts::CraftPlugin::processPacket(TSPacket& pkt, TSPack
 
 void ts::CraftPlugin::packPESHeader(TSPacket& pkt)
 {
-    // If there is no clear PES header inside the packet, nothing to do.
-    if (!pkt.startPES()) {
-        return;
-    }
+    uint8_t* stuff = nullptr;
+    size_t stuffSize = 0;
+    size_t unused = 0;
 
-    // Analyze the start of the payload, supposed to be a PES header.
-    uint8_t* const pl = pkt.getPayload();
-    const size_t plSize = pkt.getPayloadSize();
-    if (plSize < 9 || !IsLongHeaderSID(pl[3])) {
-        // Can't get the start of a long header or this stream id does not have a long header.
-        return;
-    }
+    // Locate the stuffing area inside the PES header, if there is one.
+    if (pkt.getPESHeaderStuffingArea(stuff, unused, stuffSize) && stuffSize > 0) {
+        // The stuffing area is not empty and starts inside the TS payload. The value stuffSize is what we can pack.
 
-    // Size of the PES header, may include stuffing.
-    const size_t headerSize = 9 + size_t(pl[8]);
+        // TS packet payload:
+        uint8_t* const pl = pkt.getPayload();
+        const size_t plSize = pkt.getPayloadSize();
+        assert(plSize >= 9 + stuffSize);
 
-    // Look for the offset of the stuffing in the PES packet.
-    size_t offset = 9;
-    const uint8_t PTS_DTS_flags = (pl[7] >> 6) & 0x03;
-    if (offset < headerSize && PTS_DTS_flags == 2) {
-        offset += 5;  // skip PTS
-    }
-    if (offset < headerSize && PTS_DTS_flags == 3) {
-        offset += 10;  // skip PTS and DTS
-    }
-    if (offset < headerSize && (pl[7] & 0x20) != 0) {
-        offset += 6;  // ESCR_flag set, skip ESCR
-    }
-    if (offset < headerSize && (pl[7] & 0x10) != 0) {
-        offset += 3;  // ES_rate_flag set, skip ES_rate
-    }
-    if (offset < headerSize && (pl[7] & 0x08) != 0) {
-        offset += 1;  // DSM_trick_mode_flag set, skip trick mode
-    }
-    if (offset < headerSize && (pl[7] & 0x04) != 0) {
-        offset += 1;  // additional_copy_info_flag set, skip additional_copy_info
-    }
-    if (offset < headerSize && (pl[7] & 0x02) != 0) {
-        offset += 2;  // PES_CRC_flag set, skip previous_PES_packet_CRC
-    }
-    if (offset < headerSize && offset < plSize && (pl[7] & 0x01) != 0) {
-        // PES_extension_flag set, analyze and skip PES extensions
-        // First, get the flags indicating which extensions are present.
-        const uint8_t flags = pl[offset++];
-        if (offset < headerSize && (flags & 0x80) != 0) {
-            offset += 16; // PES_private_data_flag set
-        }
-        if (offset < headerSize && offset < plSize && (flags & 0x40) != 0) {
-            offset += 1 + pl[offset]; // pack_header_field_flag set
-        }
-        if (offset < headerSize && (flags & 0x20) != 0) {
-            offset += 2; // program_packet_sequence_counter_flag set
-        }
-        if (offset < headerSize && (flags & 0x10) != 0) {
-            offset += 2; // P-STD_buffer_flag set
-        }
-        if (offset < headerSize && offset < plSize && (flags & 0x01) != 0) {
-            offset += 1 + (pl[offset] & 0x7F); //  PES_extension_flag_2 set
-        }
-    }
-
-    // Now, offset points to the beginning of the stuffing area in the PES header.
-    if (offset < headerSize && offset < plSize) {
-        // The stuffing area is not empty and starts inside the TS payload.
-        // Compute how many stuffing bytes we have inside the TS payload.
-        // This is the size we may remove from the PES header.
-        const size_t stuffSize = std::min(headerSize - offset, plSize - offset);
-        // Adjust the PES header size.
+        // Adjust the PES header size:
+        const size_t headerSize = 9 + size_t(pl[8]);
         assert(size_t(pl[8]) >= stuffSize);
         pl[8] -= uint8_t(stuffSize);
+
         // Adjust the PES packet size if not unbounded (ie. not zero).
-        const uint16_t pesSize = GetUInt16(pl + 4);
+        const size_t pesSize = GetUInt16(pl + 4);
         if (pesSize > stuffSize) {
             // Normally, should test != 0. But make sure that invalid small PES size does not cause an integer overflow.
-            PutUInt16(pl + 4, pesSize - uint16_t(stuffSize));
+            PutUInt16(pl + 4, uint16_t(pesSize - stuffSize));
         }
+
         // Shift the start of the TS payload to compress the PES header.
         ::memmove(pl + stuffSize, pl, std::min(headerSize, plSize) - stuffSize);
+
         // Now resize the TS payload
         pkt.setPayloadSize(plSize - stuffSize, false);
     }

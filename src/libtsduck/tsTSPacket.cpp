@@ -257,6 +257,125 @@ bool ts::TSPacket::startPES() const
         getPayloadSize() >= 3 && pl[0] == 0x00 && pl[1] == 0x00 && pl[2] == 0x01;
 }
 
+
+//----------------------------------------------------------------------------
+// Get the address and size of the stuffing area of the PES header in the TS packet.
+//----------------------------------------------------------------------------
+
+bool ts::TSPacket::getPESHeaderStuffingArea(uint8_t*& addr, size_t& pes_size, size_t& ts_size)
+{
+    const uint8_t* c_addr = nullptr;
+    const bool status = getPESHeaderStuffingArea(c_addr, pes_size, ts_size);
+    addr = const_cast<uint8_t*>(c_addr);
+    return status;
+}
+
+bool ts::TSPacket::getPESHeaderStuffingArea(const uint8_t*& addr, size_t& pes_size, size_t& ts_size) const
+{
+    // Reset output values when not found.
+    addr = nullptr;
+    pes_size = ts_size = 0;
+
+    // TS packet payload:
+    const uint8_t* const pl = getPayload();
+    const size_t pl_size = getPayloadSize();
+
+    // If there is no clear PES header inside the packet, nothing to do.
+    if (!startPES() || pl_size < 9 || !IsLongHeaderSID(pl[3])) {
+        // Can't get the start of a long header or this stream id does not have a long header.
+        return false;
+    }
+
+    // Size of the PES header, may include stuffing.
+    const size_t header_size = 9 + size_t(pl[8]);
+
+    // Look for the offset of the stuffing in the PES packet.
+    size_t offset = 9;
+    const uint8_t PTS_DTS_flags = (pl[7] >> 6) & 0x03;
+    if (offset < header_size && PTS_DTS_flags == 2) {
+        offset += 5;  // skip PTS
+    }
+    if (offset < header_size && PTS_DTS_flags == 3) {
+        offset += 10;  // skip PTS and DTS
+    }
+    if (offset < header_size && (pl[7] & 0x20) != 0) {
+        offset += 6;  // ESCR_flag set, skip ESCR
+    }
+    if (offset < header_size && (pl[7] & 0x10) != 0) {
+        offset += 3;  // ES_rate_flag set, skip ES_rate
+    }
+    if (offset < header_size && (pl[7] & 0x08) != 0) {
+        offset += 1;  // DSM_trick_mode_flag set, skip trick mode
+    }
+    if (offset < header_size && (pl[7] & 0x04) != 0) {
+        offset += 1;  // additional_copy_info_flag set, skip additional_copy_info
+    }
+    if (offset < header_size && (pl[7] & 0x02) != 0) {
+        offset += 2;  // PES_CRC_flag set, skip previous_PES_packet_CRC
+    }
+    if (offset < header_size && offset < pl_size && (pl[7] & 0x01) != 0) {
+        // PES_extension_flag set, analyze and skip PES extensions
+        // First, get the flags indicating which extensions are present.
+        const uint8_t flags = pl[offset++];
+        if (offset < header_size && (flags & 0x80) != 0) {
+            offset += 16; // PES_private_data_flag set
+        }
+        if (offset < header_size && offset < pl_size && (flags & 0x40) != 0) {
+            offset += 1 + pl[offset]; // pack_header_field_flag set
+        }
+        if (offset < header_size && (flags & 0x20) != 0) {
+            offset += 2; // program_packet_sequence_counter_flag set
+        }
+        if (offset < header_size && (flags & 0x10) != 0) {
+            offset += 2; // P-STD_buffer_flag set
+        }
+        if (offset < header_size && offset < pl_size && (flags & 0x01) != 0) {
+            offset += 1 + (pl[offset] & 0x7F); //  PES_extension_flag_2 set
+        }
+    }
+
+    // Now, offset points to the beginning of the stuffing area in the PES header.
+    if (offset < header_size && offset <= pl_size) {
+        // The stuffing area exists and is not empty.
+        // The part which is in the current TS packet can be smaller or even empty.
+        addr = pl + offset;
+        pes_size = header_size - offset;
+        ts_size = std::min(header_size, pl_size) - offset;
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+
+//----------------------------------------------------------------------------
+// Get the size of the PES header in the packet, if one is present.
+//----------------------------------------------------------------------------
+
+size_t ts::TSPacket::getPESHeaderSize() const
+{
+    const uint8_t* const pl = getPayload();
+    const size_t plSize = getPayloadSize();
+
+    if (!startPES() || plSize < 4) {
+        // No start PES or PES header too short to get the stream type.
+        return 0;
+    }
+    else if (!IsLongHeaderSID(pl[3])) {
+        // Short fixed-size PES header for that stream type.
+        return 6;
+    }
+    else if (plSize < 9) {
+        // Long PES header, but not long enough to get actual size.
+        return 0;
+    }
+    else {
+        // Long header.
+        return 9 + size_t(pl[8]);
+    }
+}
+
 //----------------------------------------------------------------------------
 // These private methods compute the offset of PCR, OPCR.
 // Return 0 if there is none.

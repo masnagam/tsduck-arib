@@ -76,7 +76,9 @@ namespace ts {
         uint64_t      _inserted_packet_count; // counts inserted packets
         uint64_t      _youngest_pts;          // stores last pcr value seen (calculated from PCR to PTS value by dividing by 300)
         uint64_t      _pts_last_inserted;     // stores nearest pts (actually pcr/300) of last packet insertion
-        ContinuityAnalyzer _cc_fixer;         // To fix continuity counters in mux'ed PID's
+        TSPacketMetadata::LabelSet _setLabels;    // Labels to set on output packets.
+        TSPacketMetadata::LabelSet _resetLabels;  // Labels to reset on output packets.
+        ContinuityAnalyzer         _cc_fixer;     // To fix continuity counters in mux'ed PID's
     };
 }
 
@@ -110,6 +112,8 @@ ts::MuxPlugin::MuxPlugin(TSP* tsp_) :
     _inserted_packet_count(0),
     _youngest_pts(0),
     _pts_last_inserted(0),
+    _setLabels(),
+    _resetLabels(),
     _cc_fixer(AllPIDs, tsp)
 {
     option(u"", 0, STRING, 1, 1);
@@ -143,7 +147,7 @@ ts::MuxPlugin::MuxPlugin(TSP* tsp_) :
 
     option(u"joint-termination", 'j');
     help(u"joint-termination",
-         u"Perform a \"joint termination\" when file insersion is complete. "
+         u"Perform a \"joint termination\" when the file insertion is complete. "
          u"See \"tsp --help\" for more details on \"joint termination\".");
 
     option(u"max-insert-count", 0, UNSIGNED);
@@ -192,9 +196,19 @@ ts::MuxPlugin::MuxPlugin(TSP* tsp_) :
 
     option(u"terminate", 't');
     help(u"terminate",
-         u"Terminate packet processing when file insersion is complete. By default, "
+         u"Terminate packet processing when the file insertion is complete. By default, "
          u"when packet insertion is complete, the transmission continues and the "
          u"stuffing is no longer modified.");
+
+    option(u"set-label", 0, INTEGER, 0, UNLIMITED_COUNT, 0, TSPacketMetadata::LABEL_MAX);
+    help(u"set-label", u"label1[-label2]",
+         u"Set the specified labels on the muxed packets. "
+         u"Several --set-label options may be specified.");
+
+    option(u"reset-label", 0, INTEGER, 0, UNLIMITED_COUNT, 0, TSPacketMetadata::LABEL_MAX);
+    help(u"reset-label", u"label1[-label2]",
+         u"Clear the specified labels on the muxed packets. "
+         u"Several --reset-label options may be specified.");
 }
 
 
@@ -204,7 +218,7 @@ ts::MuxPlugin::MuxPlugin(TSP* tsp_) :
 
 bool ts::MuxPlugin::start()
 {
-    tsp->useJointTermination (present(u"joint-termination"));
+    tsp->useJointTermination(present(u"joint-termination"));
     _terminate = present(u"terminate");
     _update_cc = !present(u"no-continuity-update");
     _check_pid_conflict = !present(u"no-pid-conflict-check");
@@ -224,6 +238,8 @@ bool ts::MuxPlugin::start()
     _pts_last_inserted = 0;
     _inserted_packet_count = 0;
     _pts_range_ok = true;  // by default, enable packet insertion
+    getIntValues(_setLabels, u"set-label");
+    getIntValues(_resetLabels, u"reset-label");
 
     // Convert --inter-time from milliseconds to PTS units.
     _inter_time = _inter_time * 90;
@@ -365,7 +381,7 @@ ts::ProcessorPlugin::Status ts::MuxPlugin::processPacket(TSPacket& pkt, TSPacket
 
     _inserted_packet_count++;
     _pts_last_inserted = _youngest_pts;   // store pts of last insertion
-    tsp->debug(u"Inserting Packet at PTS: %'d, file: %s", { _pts_last_inserted,_file.getFileName() });
+    tsp->debug(u"[%d:%d] Inserting Packet at PTS: %'d (pos: %'d), file: %s (pos: %'d)", { _inter_pkt,_pid_next_pkt,_pts_last_inserted,_packet_count,_file.getFileName(),_inserted_packet_count });
 
     if (_inter_time != 0) {
         _pts_range_ok = false; // reset _pts_range_ok signal if inter_time is specified
@@ -386,6 +402,10 @@ ts::ProcessorPlugin::Status ts::MuxPlugin::processPacket(TSPacket& pkt, TSPacket
 
     // Next insertion point
     _pid_next_pkt += _inter_pkt;
+
+    // Apply labels on muxed packets.
+    pkt_data.setLabels(_setLabels);
+    pkt_data.clearLabels(_resetLabels);
 
     return TSP_OK;
 }

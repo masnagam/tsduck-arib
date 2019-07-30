@@ -96,7 +96,7 @@ ts::BitRate ts::DektecInputPlugin::getBitrate()
     return 0;
 }
 
-size_t ts::DektecInputPlugin::receive(TSPacket* buffer, size_t max_packets)
+size_t ts::DektecInputPlugin::receive(TSPacket*, TSPacketMetadata*, size_t)
 {
     tsp->error(TS_NO_DTAPI_MESSAGE);
     return 0;
@@ -837,7 +837,7 @@ ts::BitRate ts::DektecInputPlugin::getBitrate()
 // Input method
 //----------------------------------------------------------------------------
 
-size_t ts::DektecInputPlugin::receive(TSPacket* buffer, size_t max_packets)
+size_t ts::DektecInputPlugin::receive(TSPacket* buffer, TSPacketMetadata* pkt_data, size_t max_packets)
 {
     if (!_guts->is_started) {
         return 0;

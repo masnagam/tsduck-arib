@@ -13,6 +13,7 @@
     <ClInclude Include="..\..\src\libtsduck\tsAbstractDescrambler.h" />
     <ClInclude Include="..\..\src\libtsduck\tsAbstractDescriptor.h" />
     <ClInclude Include="..\..\src\libtsduck\tsAbstractDescriptorsTable.h" />
+    <ClInclude Include="..\..\src\libtsduck\tsAbstractDuplicateRemapPlugin.h" />
     <ClInclude Include="..\..\src\libtsduck\tsAbstractHTTPInputPlugin.h" />
     <ClInclude Include="..\..\src\libtsduck\tsAbstractLongTable.h" />
     <ClInclude Include="..\..\src\libtsduck\tsAbstractMultilingualDescriptor.h" />
@@ -117,6 +118,7 @@
     <ClInclude Include="..\..\src\libtsduck\tsDataStreamAlignmentDescriptor.h" />
     <ClInclude Include="..\..\src\libtsduck\tsDeferredAssociationTagsDescriptor.h" />
     <ClInclude Include="..\..\src\libtsduck\tsDektecControl.h" />
+    <ClInclude Include="..\..\src\libtsduck\tsDektecDeviceInfo.h" />
     <ClInclude Include="..\..\src\libtsduck\tsDektecInputPlugin.h" />
     <ClInclude Include="..\..\src\libtsduck\tsDektecOutputPlugin.h" />
     <ClInclude Include="..\..\src\libtsduck\tsDektecUtils.h" />
@@ -173,7 +175,10 @@
     <ClInclude Include="..\..\src\libtsduck\tsExternalApplicationAuthorizationDescriptor.h" />
     <ClInclude Include="..\..\src\libtsduck\tsExternalESIdDescriptor.h" />
     <ClInclude Include="..\..\src\libtsduck\tsFatal.h" />
+    <ClInclude Include="..\..\src\libtsduck\tsFileInputPlugin.h" />
     <ClInclude Include="..\..\src\libtsduck\tsFileNameRate.h" />
+    <ClInclude Include="..\..\src\libtsduck\tsFileOutputPlugin.h" />
+    <ClInclude Include="..\..\src\libtsduck\tsFilePacketPlugin.h" />
     <ClInclude Include="..\..\src\libtsduck\tsForkPipe.h" />
     <ClInclude Include="..\..\src\libtsduck\tsGitHubRelease.h" />
     <ClInclude Include="..\..\src\libtsduck\tsGraphicsConstraintsDescriptor.h" />
@@ -299,6 +304,7 @@
     <ClInclude Include="..\..\src\libtsduck\tsProtectionMessageDescriptor.h" />
     <ClInclude Include="..\..\src\libtsduck\tsPSILogger.h" />
     <ClInclude Include="..\..\src\libtsduck\tsPSILoggerArgs.h" />
+    <ClInclude Include="..\..\src\libtsduck\tsPSIMerger.h" />
     <ClInclude Include="..\..\src\libtsduck\tsPushInputPlugin.h" />
     <ClInclude Include="..\..\src\libtsduck\tsRandomGenerator.h" />
     <ClInclude Include="..\..\src\libtsduck\tsRegistrationDescriptor.h" />
@@ -527,6 +533,7 @@
     <ClCompile Include="..\..\src\libtsduck\tsAbstractDescrambler.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsAbstractDescriptor.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsAbstractDescriptorsTable.cpp" />
+    <ClCompile Include="..\..\src\libtsduck\tsAbstractDuplicateRemapPlugin.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsAbstractHTTPInputPlugin.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsAbstractLongTable.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsAbstractMultilingualDescriptor.cpp" />
@@ -609,6 +616,7 @@
     <ClCompile Include="..\..\src\libtsduck\tsDataStreamAlignmentDescriptor.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsDeferredAssociationTagsDescriptor.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsDektecControl.cpp" />
+    <ClCompile Include="..\..\src\libtsduck\tsDektecDeviceInfo.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsDektecInputPlugin.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsDektecOutputPlugin.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsDektecUtils.cpp" />
@@ -657,7 +665,10 @@
     <ClCompile Include="..\..\src\libtsduck\tsExternalApplicationAuthorizationDescriptor.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsExternalESIdDescriptor.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsFatal.cpp" />
+    <ClCompile Include="..\..\src\libtsduck\tsFileInputPlugin.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsFileNameRate.cpp" />
+    <ClCompile Include="..\..\src\libtsduck\tsFileOutputPlugin.cpp" />
+    <ClCompile Include="..\..\src\libtsduck\tsFilePacketPlugin.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsForkPipe.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsGitHubRelease.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsGraphicsConstraintsDescriptor.cpp" />
@@ -775,6 +786,7 @@
     <ClCompile Include="..\..\src\libtsduck\tsProtectionMessageDescriptor.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsPSILogger.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsPSILoggerArgs.cpp" />
+    <ClCompile Include="..\..\src\libtsduck\tsPSIMerger.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsPushInputPlugin.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsRandomGenerator.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsRegistrationDescriptor.cpp" />

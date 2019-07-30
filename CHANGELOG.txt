@@ -2,24 +2,26 @@ TSDUCK CHANGE LOG AND RELEASE NOTES
 
 -------------------------------------------------------------------------------
 
-VERSION 3.18-1287
+VERSION 3.18-1321
 
 [NEW] New commands and plugins:
 
   * Added plugin "craft" as input to build specifically crafted packets and as
     packet processor to similarly alter packets in transit.
-  * Added plugin 'trigger" which executes actions on selected labeled TS
+  * Added plugin "trigger" which executes actions on selected labeled TS
     packets.
   * Added plugin "cutoff" which sets labels on TS packets upon reception of
     UDP messages.
+  * Added plugin "psimerge" which merges PSI/SI from mixed streams.
 
 [IMP] Improvements on existing commands and plugins:
 
   * Added option --only-label to all packet processing plugins. There is a
     new possibility to mark individual packets with a label which can be
     reused in other plugins.
-  * Added options --label, --set-label, --reset-label, --nullified,
-    --input-stuffing, --every to plugin "filter".
+  * Added options --label, --set-label, --reset-label, --set-permanent-label,
+    --reset-permanent-label, --nullified, --input-stuffing, --every, --interval
+    to plugin "filter".
   * Added option --atsc to commands "tsanalyze", "tstables", "tspsi",
     "tstabdump", "tstabcomp" and plugins "analyze", "tables", "psi".
   * Added option --pes-offset to plugin "encap" (synchronous PES mode).
@@ -27,10 +29,18 @@ VERSION 3.18-1287
     "pmt". The option --add-programinfo-id is now deprecated.
   * Added option --eit to plugin "timeref".
   * Added option --tag to plugin "count".
-  * Added option --single to plugin "remap".
-  * Added options--set-label-below, --set-label-normal, --set-label-above,
+  * Added options --single, --set-label and --reset-label to plugins "remap"
+    and "duplicate".
+  * Added options --terminate, --joint-termination, --set-label and
+    --reset-label to plugin "merge".
+  * Added options --set-label and --reset-label to plugin "mux".
+  * Added options --set-label-below, --set-label-normal, --set-label-above,
     --set-label-go-below, --set-label-go-normal, --set-label-go-above to
     plugin "bitrate_monitor".
+  * Added RTP support for output plugin "ip": added options --rtp,
+    --payload-type, --pcr-pid, --ssrc-identifier and --start-sequence-number.
+  * Added options --interleave, --label-base and --first-terminate to input
+    plugin "file".
 
 [BUG] Bug fixes:
 

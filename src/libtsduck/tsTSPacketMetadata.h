@@ -141,7 +141,7 @@ namespace ts {
         //! @param [in] label The label to check.
         //! @return True if the TS packet has @a label set.
         //!
-        bool hasLabel(size_t label) const { return _labels.test(label); }
+        bool hasLabel(size_t label) const;
 
         //!
         //! Check if the TS packet has any label set.
@@ -194,9 +194,14 @@ namespace ts {
 
     private:
         LabelSet _labels;           // Bit mask of labels.
-        bool      _flush;            // Flush the packet buffer asap.
-        bool      _bitrate_changed;  // Call getBitrate() callback as soon as possible.
-        bool      _input_stuffing;   // Packet was artificially inserted as input stuffing.
-        bool      _nullified;        // Packet was explicitly turned into a null packet by a plugin.
+        bool     _flush;            // Flush the packet buffer asap.
+        bool     _bitrate_changed;  // Call getBitrate() callback as soon as possible.
+        bool     _input_stuffing;   // Packet was artificially inserted as input stuffing.
+        bool     _nullified;        // Packet was explicitly turned into a null packet by a plugin.
     };
+
+    //!
+    //! Vector of packet metadata.
+    //!
+    typedef std::vector<TSPacketMetadata> TSPacketMetadataVector;
 }
