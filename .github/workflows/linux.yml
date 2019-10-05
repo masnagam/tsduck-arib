@@ -1,0 +1,41 @@
+name: Linux
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends autoconf automake cmake dos2unix g++-8 libtool make pkg-config
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 80
+      - name: Install aribb24
+        run: |
+          mkdir -p /tmp/aribb24
+          cd /tmp/aribb24
+          curl -fsSL https://github.com/masnagam/aribb24/archive/master.tar.gz \
+            | tar -xz --strip-components=1
+          ./bootstrap
+          ./configure --prefix=/usr/local \
+            --disable-shared --with-pic --without-libpng
+          make -j $(nproc)
+          sudo make install
+          rm -rf /tmp/aribb24
+      - uses: actions/checkout@v1
+      - name: Build and run tests
+        run: |
+          make -j $(nproc) ARIB=1 NOCURL=1 NODTAPI=1 NOPCSC=1
+        env:
+          PKG_CONFIG_PATH: /usr/local/lib/pkgconfig
+      - name: Run tests
+        run: |
+          make -j $(nproc) test ARIB=1 NOCURL=1 NODTAPI=1 NOPCSC=1
+      - name: Install
+        run: |
+          sudo make install SYSPREFIX=/usr/local \
+            ARIB=1 NOCURL=1 NODTAPI=1 NOPCSC=1
+          sudo make install-devel SYSPREFIX=/usr/local \
+            ARIB=1 NOCURL=1 NODTAPI=1 NOPCSC=1

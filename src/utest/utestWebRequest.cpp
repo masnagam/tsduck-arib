@@ -43,6 +43,8 @@
 TSDUCK_SOURCE;
 
 
+#if !defined(TS_NO_CURL)
+
 //----------------------------------------------------------------------------
 // The test fixture
 //----------------------------------------------------------------------------
@@ -311,3 +313,5 @@ void WebRequestTest::testInvalidURL()
 
     debug() << "WebRequestTest::testInvalidURL: " << rep.getMessages() << std::endl;
 }
+
+#endif
