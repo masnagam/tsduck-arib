@@ -34,6 +34,8 @@
 #
 #-----------------------------------------------------------------------------
 
+exit 0
+
 HOOK="$1"
 SCRIPT=$(basename ${BASH_SOURCE[0]} .sh)
 ROOTDIR=$(cd $(dirname ${BASH_SOURCE[0]})/..; pwd)
