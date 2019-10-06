@@ -46,7 +46,7 @@ TSDUCK_SOURCE;
 
 TS_XML_DESCRIPTOR_FACTORY(ts::ARIBAudioComponentDescriptor, MY_XML_NAME);
 TS_ID_DESCRIPTOR_FACTORY(ts::ARIBAudioComponentDescriptor, ts::EDID::Standard(MY_DID));
-TS_ID_DESCRIPTOR_DISPLAY(ts::ARIBAudioComponentDescriptor::DisplayDescriptor, ts::EDID::Standard(MY_DID));
+TS_FACTORY_REGISTER(ts::ARIBAudioComponentDescriptor::DisplayDescriptor, ts::EDID::Standard(MY_DID));
 
 
 //----------------------------------------------------------------------------
@@ -102,12 +102,12 @@ void ts::ARIBAudioComponentDescriptor::serialize(DuckContext& duck, Descriptor& 
         (main_component              ? 0x40 : 0) |
         uint8_t((quality_indicator & 0x03) << 4) |
         uint8_t((sampling_rate     & 0x07) << 1));
-    if (!SerializeLanguageCode(duck, *bbp, language_code)) {
+    if (!SerializeLanguageCode(*bbp, language_code)) {
         desc.invalidate();
         return;
     }
     if (es_multi_lingual) {
-      if (!SerializeLanguageCode(duck, *bbp, language_code2)) {
+      if (!SerializeLanguageCode(*bbp, language_code2)) {
         desc.invalidate();
         return;
       }
