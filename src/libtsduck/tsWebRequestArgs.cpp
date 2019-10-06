@@ -28,11 +28,12 @@
 //----------------------------------------------------------------------------
 
 #include "tsWebRequestArgs.h"
+#include "tsArgs.h"
 TSDUCK_SOURCE;
 
 
 //----------------------------------------------------------------------------
-// Default constructor.
+// Constructors and destructors.
 //----------------------------------------------------------------------------
 
 ts::WebRequestArgs::WebRequestArgs() :
@@ -47,12 +48,16 @@ ts::WebRequestArgs::WebRequestArgs() :
 {
 }
 
+ts::WebRequestArgs::~WebRequestArgs()
+{
+}
+
 
 //----------------------------------------------------------------------------
 // Define command line options in an Args.
 //----------------------------------------------------------------------------
 
-void ts::WebRequestArgs::defineOptions(Args& args) const
+void ts::WebRequestArgs::defineArgs(Args& args) const
 {
     args.option(u"connection-timeout", 0, Args::POSITIVE);
     args.help(u"connection-timeout",
@@ -88,7 +93,7 @@ void ts::WebRequestArgs::defineOptions(Args& args) const
 // Args error indicator is set in case of incorrect arguments
 //----------------------------------------------------------------------------
 
-bool ts::WebRequestArgs::loadArgs(Args& args)
+bool ts::WebRequestArgs::loadArgs(DuckContext& duck, Args& args)
 {
     connectionTimeout = args.intValue<MilliSecond>(u"connection-timeout");
     receiveTimeout = args.intValue<MilliSecond>(u"receive-timeout");

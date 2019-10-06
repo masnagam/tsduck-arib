@@ -50,8 +50,22 @@ ts::TablesFactory::TablesFactory() :
     _descriptorNames(),
     _descriptorTablesIds(),
     _sectionDisplays(),
-    _descriptorDisplays()
+    _sectionLogs(),
+    _descriptorDisplays(),
+    _casIdDescriptorDisplays(),
+    _xmlModelFiles(),
+    _namesFiles()
 {
+}
+
+
+//----------------------------------------------------------------------------
+// Build a key in _sectionDisplays and _sectionLogs.
+//----------------------------------------------------------------------------
+
+uint32_t ts::TablesFactory::SectionDisplayIndex(TID id, uint16_t cas)
+{
+    return uint32_t(uint32_t(cas) << 8) | uint32_t(id & 0x00FF);
 }
 
 
@@ -91,21 +105,58 @@ ts::TablesFactory::Register::Register(const UString& node_name, DescriptorFactor
     }
 }
 
-ts::TablesFactory::Register::Register(TID id, DisplaySectionFunction func)
+ts::TablesFactory::Register::Register(DisplaySectionFunction func, TID id, uint16_t minCAS, uint16_t maxCAS)
 {
-    TablesFactory::Instance()->_sectionDisplays.insert(std::make_pair(id, func));
+    do {
+        TablesFactory::Instance()->_sectionDisplays.insert(std::make_pair(SectionDisplayIndex(id, minCAS), func));
+    } while (minCAS++ < maxCAS);
 }
 
-ts::TablesFactory::Register::Register(TID minId, TID maxId, DisplaySectionFunction func)
+ts::TablesFactory::Register::Register(DisplaySectionFunction func, TID minId, TID maxId, uint16_t minCAS, uint16_t maxCAS)
 {
-    for (TID id = minId; id <= maxId; ++id) {
-        TablesFactory::Instance()->_sectionDisplays.insert(std::make_pair(id, func));
-    }
+    do {
+        for (TID id = minId; id <= maxId; ++id) {
+            TablesFactory::Instance()->_sectionDisplays.insert(std::make_pair(SectionDisplayIndex(id, minCAS), func));
+        }
+    } while (minCAS++ < maxCAS);
 }
 
-ts::TablesFactory::Register::Register(const EDID& edid, DisplayDescriptorFunction func)
+ts::TablesFactory::Register::Register(LogSectionFunction func, TID id, uint16_t minCAS, uint16_t maxCAS)
+{
+    do {
+        TablesFactory::Instance()->_sectionLogs.insert(std::make_pair(SectionDisplayIndex(id, minCAS), func));
+    } while (minCAS++ < maxCAS);
+}
+
+ts::TablesFactory::Register::Register(LogSectionFunction func, TID minId, TID maxId, uint16_t minCAS, uint16_t maxCAS)
+{
+    do {
+        for (TID id = minId; id <= maxId; ++id) {
+            TablesFactory::Instance()->_sectionLogs.insert(std::make_pair(SectionDisplayIndex(id, minCAS), func));
+        }
+    } while (minCAS++ < maxCAS);
+}
+
+ts::TablesFactory::Register::Register(DisplayDescriptorFunction func, const EDID& edid)
 {
     TablesFactory::Instance()->_descriptorDisplays.insert(std::make_pair(edid, func));
+}
+
+ts::TablesFactory::Register::Register(DisplayCADescriptorFunction func, uint16_t minCAS, uint16_t maxCAS)
+{
+    do {
+        TablesFactory::Instance()->_casIdDescriptorDisplays.insert(std::make_pair(minCAS, func));
+    } while (minCAS++ < maxCAS);
+}
+
+ts::TablesFactory::RegisterXML::RegisterXML(const UString& filename)
+{
+    TablesFactory::Instance()->_xmlModelFiles.push_back(filename);
+}
+
+ts::TablesFactory::RegisterNames::RegisterNames(const UString& filename)
+{
+    TablesFactory::Instance()->_namesFiles.push_back(filename);
 }
 
 
@@ -137,10 +188,40 @@ ts::TablesFactory::DescriptorFactory ts::TablesFactory::getDescriptorFactory(con
     return it != _descriptorNames.end() ? it->second : nullptr;
 }
 
-ts::DisplaySectionFunction ts::TablesFactory::getSectionDisplay(TID id) const
+ts::DisplayCADescriptorFunction ts::TablesFactory::getCADescriptorDisplay(uint16_t cas_id) const
 {
-    auto it = _sectionDisplays.find(id);
-    return it != _sectionDisplays.end() ? it->second : nullptr;
+    // Try exact CA_system_id.
+    const auto it = _casIdDescriptorDisplays.find(cas_id);
+    return it != _casIdDescriptorDisplays.end() ? it->second : nullptr;
+}
+
+
+//----------------------------------------------------------------------------
+// Common code for getSectionDisplay and getSectionLog.
+//----------------------------------------------------------------------------
+
+template <typename FUNCTION>
+FUNCTION ts::TablesFactory::getSectionFunction(TID id, uint16_t cas, const std::map<uint32_t,FUNCTION>& funcMap) const
+{
+    // Try with current CAS.
+    typename std::map<uint32_t, FUNCTION>::const_iterator it = funcMap.find(SectionDisplayIndex(id, cas));
+
+    // Try CAS-independent value if not found.
+    if (cas != CASID_NULL && it == funcMap.end()) {
+        it = funcMap.find(SectionDisplayIndex(id, CASID_NULL));
+    }
+
+    return it != funcMap.end() ? it->second : nullptr;
+}
+
+ts::DisplaySectionFunction ts::TablesFactory::getSectionDisplay(TID id, uint16_t cas) const
+{
+    return getSectionFunction(id, cas, _sectionDisplays);
+}
+
+ts::LogSectionFunction ts::TablesFactory::getSectionLog(TID id, uint16_t cas) const
+{
+    return getSectionFunction(id, cas, _sectionLogs);
 }
 
 
@@ -182,7 +263,7 @@ ts::UString ts::TablesFactory::descriptorTables(const UString& desc_node_name) c
         if (!result.empty()) {
             result.append(u", ");
         }
-        result.append(names::TID(it->second, CAS_OTHER, names::NAME | names::HEXA));
+        result.append(names::TID(it->second, CASID_NULL, names::NAME | names::HEXA));
         ++it;
     }
 
@@ -259,4 +340,14 @@ void ts::TablesFactory::getRegisteredDescriptorNames(UStringList& names) const
     for (std::map<UString,DescriptorFactory>::const_iterator it = _descriptorNames.begin(); it != _descriptorNames.end(); ++it) {
         names.push_back(it->first);
     }
+}
+
+void ts::TablesFactory::getRegisteredTablesModels(UStringList& names) const
+{
+    names = _xmlModelFiles;
+}
+
+void ts::TablesFactory::getRegisteredNamesFiles(UStringList &names) const
+{
+    names = _namesFiles;
 }

@@ -67,10 +67,10 @@ Options::Options(int argc, char *argv[]) :
     pager(true, true)
 {
     // Define all standard analysis options.
-    duck.defineOptionsForStandards(*this);
-    duck.defineOptionsForDVBCharset(*this);
-    pager.defineOptions(*this);
-    analysis.defineOptions(*this);
+    duck.defineArgsForStandards(*this);
+    duck.defineArgsForDVBCharset(*this);
+    pager.defineArgs(*this);
+    analysis.defineArgs(*this);
 
     option(u"", 0, STRING, 0, 1);
     help(u"", u"Input MPEG capture file (standard input if omitted).");
@@ -84,9 +84,9 @@ Options::Options(int argc, char *argv[]) :
     analyze(argc, argv);
 
     // Define all standard analysis options.
-    duck.loadOptions(*this);
-    pager.load(*this);
-    analysis.load(*this);
+    duck.loadArgs(*this);
+    pager.loadArgs(duck, *this);
+    analysis.loadArgs(duck, *this);
 
     infile = value(u"");
     bitrate = intValue<ts::BitRate>(u"bitrate");

@@ -42,7 +42,7 @@ TSDUCK_SOURCE;
 
 TS_XML_DESCRIPTOR_FACTORY(ts::CPDescriptor, MY_XML_NAME);
 TS_ID_DESCRIPTOR_FACTORY(ts::CPDescriptor, ts::EDID::ExtensionDVB(MY_EDID));
-TS_ID_DESCRIPTOR_DISPLAY(ts::CPDescriptor::DisplayDescriptor, ts::EDID::ExtensionDVB(MY_EDID));
+TS_FACTORY_REGISTER(ts::CPDescriptor::DisplayDescriptor, ts::EDID::ExtensionDVB(MY_EDID));
 
 
 //----------------------------------------------------------------------------
@@ -142,7 +142,7 @@ void ts::CPDescriptor::DisplayDescriptor(TablesDisplay& display, DID did, const 
 
         uint16_t id = GetUInt16(data);
         uint16_t pid = GetUInt16(data + 2) & 0x1FFF;
-        strm << margin << UString::Format(u"CP System Id: %s, CP PID: %d (0x%X)", {DVBNameFromSection(u"CPSystemId", id, names::FIRST), pid, pid}) << std::endl;
+        strm << margin << UString::Format(u"CP System Id: %s, CP PID: %d (0x%X)", {NameFromSection(u"CPSystemId", id, names::FIRST), pid, pid}) << std::endl;
 
         // CA private part.
         if (size > 4) {

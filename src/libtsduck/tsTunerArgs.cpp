@@ -37,6 +37,7 @@
 #include "tsTunerParametersDVBC.h"
 #include "tsChannelFile.h"
 #include "tsHFBand.h"
+#include "tsArgs.h"
 #include "tsSysUtils.h"
 #include "tsNullReport.h"
 TSDUCK_SOURCE;
@@ -128,13 +129,15 @@ void ts::TunerArgs::reset()
 // Load arguments from command line.
 //----------------------------------------------------------------------------
 
-void ts::TunerArgs::load(Args& args, DuckContext& duck)
+bool ts::TunerArgs::loadArgs(DuckContext& duck, Args& args)
 {
+    bool status = true;
     reset();
 
     // Tuner identification.
     if (args.present(u"adapter") && args.present(u"device-name")) {
         args.error(u"choose either --adapter or --device-name but not both");
+        status = false;
     }
     if (args.present(u"device-name")) {
         device_name = args.value(u"device-name");
@@ -167,6 +170,7 @@ void ts::TunerArgs::load(Args& args, DuckContext& duck)
         // Carrier frequency
         if (args.present(u"frequency") + args.present(u"uhf-channel") + args.present(u"vhf-channel") > 1) {
             args.error(u"options --frequency, --uhf-channel and --vhf-channel are mutually exclusive");
+            status = false;
         }
         else if (args.present(u"frequency")) {
             got_one = true;
@@ -261,6 +265,7 @@ void ts::TunerArgs::load(Args& args, DuckContext& duck)
             LNB l(s);
             if (!l.isValid()) {
                 args.error(u"invalid LNB description " + s);
+                status = false;
             }
             else {
                 lnb = l;
@@ -281,8 +286,11 @@ void ts::TunerArgs::load(Args& args, DuckContext& duck)
         // Mutually exclusive methods of locating the channels
         if (got_one + channel_name.set() > 1) {
             args.error(u"--channel-transponder and individual tuning options are incompatible");
+            status = false;
         }
     }
+
+    return status;
 }
 
 
@@ -290,7 +298,7 @@ void ts::TunerArgs::load(Args& args, DuckContext& duck)
 // Define command line options in an Args.
 //----------------------------------------------------------------------------
 
-void ts::TunerArgs::defineOptions(Args& args) const
+void ts::TunerArgs::defineArgs(Args& args) const
 {
     // Tuner identification.
     args.option(u"adapter", _allow_short_options ? u'a' : 0, Args::UNSIGNED);

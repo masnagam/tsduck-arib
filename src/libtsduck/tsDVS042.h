@@ -72,11 +72,11 @@ namespace ts {
         //! The method setIV() sets the IV for @e long blocks (longer than the block size)
         //! and @e short blocks (shorter than the block size). The latter can then
         //! be overwritten using setShortIV().
-        //! @param [in] iv Address of IV.
+        //! @param [in] iv_data Address of IV.
         //! @param [in] iv_length IV length in bytes.
         //! @return True on success, false on error.
         //!
-        virtual bool setShortIV(const void* iv, size_t iv_length);
+        virtual bool setShortIV(const void* iv_data, size_t iv_length);
 
         // Implementation of BlockCipher and CipherChaining interfaces.
         // For some reason, doxygen is unable to automatically inherit the
@@ -90,20 +90,17 @@ namespace ts {
         virtual bool residueAllowed() const override;
 
         //! @copydoc ts::CipherChaining::setIV()
-        virtual bool setIV(const void* iv, size_t iv_length) override;
+        virtual bool setIV(const void* iv_data, size_t iv_length) override;
 
         //! @copydoc ts::BlockCipher::name()
         virtual UString name() const override;
 
-        //! @copydoc ts::BlockCipher::encrypt()
-        virtual bool encrypt(const void* plain, size_t plain_length,
-                             void* cipher, size_t cipher_maxsize,
-                             size_t* cipher_length = nullptr) override;
+    protected:
+        //! @copydoc ts::BlockCipher::encryptImpl()
+        virtual bool encryptImpl(const void* plain, size_t plain_length, void* cipher, size_t cipher_maxsize, size_t* cipher_length) override;
 
-        //! @copydoc ts::BlockCipher::decrypt()
-        virtual bool decrypt(const void* cipher, size_t cipher_length,
-                             void* plain, size_t plain_maxsize,
-                             size_t* plain_length = nullptr) override;
+        //! @copydoc ts::BlockCipher::decryptImpl()
+        virtual bool decryptImpl(const void* cipher, size_t cipher_length, void* plain, size_t plain_maxsize,                              size_t* plain_length) override;
 
     protected:
         ByteBlock shortIV;  //!< Current initialization vector for short blocks.

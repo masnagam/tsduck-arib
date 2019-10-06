@@ -50,6 +50,7 @@ namespace ts {
     public:
         // Implementation of ProcessorPlugin interface.
         // If overridden by subclass, superclass must be explicitly invoked.
+        virtual bool getOptions() override;
         virtual bool start() override;
         virtual Status processPacket(TSPacket&, TSPacketMetadata&) override;
 
@@ -92,7 +93,7 @@ namespace ts {
         //! table from the same PID as the target table.
         //! @param [in,out] reinsert Indicate that the modified @a table shall be reinserted in the
         //! PID. Initially true. Can be set to false by handleTable() to indicate that this table
-        //! shal be removed from the PID.
+        //! shall be removed from the PID.
         //!
         virtual void modifyTable(BinaryTable& table, bool& is_target, bool& reinsert) = 0;
 

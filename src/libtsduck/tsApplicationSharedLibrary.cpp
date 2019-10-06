@@ -133,4 +133,14 @@ void ts::ApplicationSharedLibrary::GetPluginList(UStringVector& files, const USt
         // Get list of shared library files matching the requested pattern in this directory.
         ExpandWildcardAndAppend(files, *it + PathSeparator + prefix + u"*" TS_SHARED_LIB_SUFFIX);
     }
+
+    // Sort the list of plugins.
+    std::sort(files.begin(), files.end());
+
+    // Remove duplicates in case the same directory is listed several times.
+    // Starting with Visual Studio 2019 16.4, std::unique has "nodiscard" attribute, which is useless.
+    TS_PUSH_WARNING()
+    TS_MSC_NOWARNING(4834) // discarding return value of function with 'nodiscard' attribute
+    std::unique(files.begin(), files.end());
+    TS_POP_WARNING()
 }

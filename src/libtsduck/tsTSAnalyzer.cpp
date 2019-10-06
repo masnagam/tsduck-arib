@@ -340,6 +340,42 @@ ts::TSAnalyzer::PIDContext::PIDContext(PID pid_, const UString& description_) :
             optional = true;
             carry_section = true;
             break;
+        case PID_DCT:
+            description = u"ISDB DCT";
+            referenced = true;
+            optional = true;
+            carry_section = true;
+            break;
+        case PID_PCAT:
+            description = u"ISDB PCAT";
+            referenced = true;
+            optional = true;
+            carry_section = true;
+            break;
+        case PID_SDTT:
+            description = u"ISDB SDTT";
+            referenced = true;
+            optional = true;
+            carry_section = true;
+            break;
+        case PID_BIT:
+            description = u"ISDB BIT";
+            referenced = true;
+            optional = true;
+            carry_section = true;
+            break;
+        case PID_NBIT:
+            description = u"ISDB NBIT/LDT";
+            referenced = true;
+            optional = true;
+            carry_section = true;
+            break;
+        case PID_CDT:
+            description = u"ISDB CDT";
+            referenced = true;
+            optional = true;
+            carry_section = true;
+            break;
         default:
             break;
     }
@@ -455,6 +491,10 @@ ts::TSAnalyzer::PIDContextPtr ts::TSAnalyzer::getPID(PID pid, const UString& des
         return _pids[pid] = new PIDContext(pid, description);
     }
     else {
+        // If the PID was marked as unreferenced, now use actual description.
+        if (p->description == UNREFERENCED && description != UNREFERENCED) {
+            p->description = description;
+        }
         return p;
     }
 }

@@ -90,13 +90,13 @@ GenECMOptions::GenECMOptions(int argc, char *argv[]) :
     help(u"cw-next", u"Next control word (optional). The value must be a suite of hexadecimal digits.");
 
     // Common ECMG parameters.
-    ecmg.defineOptions(*this);
+    ecmg.defineArgs(*this);
 
     // Analyze the command line.
     analyze(argc, argv);
 
     // Analyze parameters.
-    ecmg.loadArgs(*this);
+    ecmg.loadArgs(duck, *this);
     getValue(outFile, u"");
     cpNumber = intValue<uint16_t>(u"cp-number", 0);
     if (!value(u"cw-current").hexaDecode(cwCurrent) || !value(u"cw-next").hexaDecode(cwNext)) {

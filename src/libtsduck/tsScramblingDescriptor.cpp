@@ -41,7 +41,7 @@ TSDUCK_SOURCE;
 
 TS_XML_DESCRIPTOR_FACTORY(ts::ScramblingDescriptor, MY_XML_NAME);
 TS_ID_DESCRIPTOR_FACTORY(ts::ScramblingDescriptor, ts::EDID::Standard(MY_DID));
-TS_ID_DESCRIPTOR_DISPLAY(ts::ScramblingDescriptor::DisplayDescriptor, ts::EDID::Standard(MY_DID));
+TS_FACTORY_REGISTER(ts::ScramblingDescriptor::DisplayDescriptor, ts::EDID::Standard(MY_DID));
 
 
 //----------------------------------------------------------------------------
@@ -100,7 +100,7 @@ void ts::ScramblingDescriptor::DisplayDescriptor(TablesDisplay& display, DID did
     if (size >= 1) {
         const uint8_t mode = data[0];
         data += 1; size -= 1;
-        strm << margin << UString::Format(u"Scrambling mode: %s", {DVBNameFromSection(u"ScramblingMode", mode, names::HEXA_FIRST)}) << std::endl;
+        strm << margin << UString::Format(u"Scrambling mode: %s", {NameFromSection(u"ScramblingMode", mode, names::HEXA_FIRST)}) << std::endl;
     }
 
     display.displayExtraData(data, size, indent);

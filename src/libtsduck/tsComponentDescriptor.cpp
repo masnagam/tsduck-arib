@@ -46,7 +46,7 @@ TSDUCK_SOURCE;
 
 TS_XML_DESCRIPTOR_FACTORY(ts::ComponentDescriptor, MY_XML_NAME);
 TS_ID_DESCRIPTOR_FACTORY(ts::ComponentDescriptor, ts::EDID::Standard(MY_DID));
-TS_ID_DESCRIPTOR_DISPLAY(ts::ComponentDescriptor::DisplayDescriptor, ts::EDID::Standard(MY_DID));
+TS_FACTORY_REGISTER(ts::ComponentDescriptor::DisplayDescriptor, ts::EDID::Standard(MY_DID));
 
 
 //----------------------------------------------------------------------------
@@ -88,7 +88,7 @@ void ts::ComponentDescriptor::serialize(DuckContext& duck, Descriptor& desc) con
     bbp->appendUInt8(uint8_t(stream_content_ext << 4) | (stream_content & 0x0F));
     bbp->appendUInt8(component_type);
     bbp->appendUInt8(component_tag);
-    if (!SerializeLanguageCode(duck, *bbp, language_code)) {
+    if (!SerializeLanguageCode(*bbp, language_code)) {
         desc.invalidate();
         return;
     }

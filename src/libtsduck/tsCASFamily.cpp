@@ -41,24 +41,31 @@ TSDUCK_SOURCE;
 // Useful to analyze CA descriptors.
 //----------------------------------------------------------------------------
 
-ts::CASFamily ts::CASFamilyOf (uint16_t casid)
+ts::CASFamily ts::CASFamilyOf(uint16_t casid)
 {
-    if (casid >= CASID_MEDIAGUARD_MIN && casid <= CASID_MEDIAGUARD_MAX) {
-        return CAS_MEDIAGUARD;
-    }
-    else if (casid >= CASID_VIACCESS_MIN && casid <= CASID_VIACCESS_MAX) {
-        return CAS_VIACCESS;
-    }
-    else if (casid >= CASID_NAGRA_MIN && casid <= CASID_NAGRA_MAX) {
-        return CAS_NAGRA;
-    }
-    else if (casid >= CASID_THALESCRYPT_MIN && casid <= CASID_THALESCRYPT_MAX) {
-        return CAS_THALESCRYPT;
-    }
-    else if (casid == CASID_SAFEACCESS) {
-        return CAS_SAFEACCESS;
-    }
-    else {
-        return CAS_OTHER;
+    struct CASDesc {
+        CASFamily family;
+        uint16_t  min;
+        uint16_t  max;
+    };
+
+    static const CASDesc table[] = {
+        {CAS_MEDIAGUARD,  CASID_MEDIAGUARD_MIN,  CASID_MEDIAGUARD_MAX},
+        {CAS_NAGRA,       CASID_NAGRA_MIN,       CASID_NAGRA_MAX},
+        {CAS_VIACCESS,    CASID_VIACCESS_MIN,    CASID_VIACCESS_MAX},
+        {CAS_THALESCRYPT, CASID_THALESCRYPT_MIN, CASID_THALESCRYPT_MAX},
+        {CAS_SAFEACCESS,  CASID_SAFEACCESS,      CASID_SAFEACCESS},
+        {CAS_WIDEVINE,    CASID_WIDEVINE_MIN,    CASID_WIDEVINE_MAX},
+        {CAS_NDS,         CASID_NDS_MIN,         CASID_NDS_MAX},
+        {CAS_IRDETO,      CASID_IRDETO_MIN,      CASID_IRDETO_MAX},
+        {CAS_IRDETO,      CASID_CRYPTOWORKS_MIN, CASID_CRYPTOWORKS_MAX},
+        {CAS_CONAX,       CASID_CONAX_MIN,       CASID_CONAX_MAX},
+        {CAS_OTHER,       0x0000,                0xFFFF},
+    };
+
+    for (const CASDesc* it = table; ; ++it) {
+        if (casid >= it->min && casid <= it->max) {
+            return it->family;
+        }
     }
 }

@@ -41,7 +41,7 @@ TSDUCK_SOURCE;
 
 TS_XML_DESCRIPTOR_FACTORY(ts::HierarchyDescriptor, MY_XML_NAME);
 TS_ID_DESCRIPTOR_FACTORY(ts::HierarchyDescriptor, ts::EDID::Standard(MY_DID));
-TS_ID_DESCRIPTOR_DISPLAY(ts::HierarchyDescriptor::DisplayDescriptor, ts::EDID::Standard(MY_DID));
+TS_FACTORY_REGISTER(ts::HierarchyDescriptor::DisplayDescriptor, ts::EDID::Standard(MY_DID));
 
 
 //----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ void ts::HierarchyDescriptor::DisplayDescriptor(TablesDisplay& display, DID did,
         strm << margin << "Temporal scalability: " << UString::TrueFalse((data[0] & 0x40) != 0) << std::endl
              << margin << "Spatial scalability: " << UString::TrueFalse((data[0] & 0x20) != 0) << std::endl
              << margin << "Quality scalability: " << UString::TrueFalse((data[0] & 0x10) != 0) << std::endl
-             << margin << "Hierarchy type: " << DVBNameFromSection(u"HierarchyType", data[0] & 0x0F, names::BOTH_FIRST) << std::endl
+             << margin << "Hierarchy type: " << NameFromSection(u"HierarchyType", data[0] & 0x0F, names::BOTH_FIRST) << std::endl
              << margin << UString::Format(u"Hierarchy layer index: %d", {data[1] & 0x3F}) << std::endl
              << margin << "Tref present: " << UString::TrueFalse((data[2] & 0x80) != 0) << std::endl
              << margin << UString::Format(u"Hierarchy embedded layer index: %d", {data[2] & 0x3F}) << std::endl

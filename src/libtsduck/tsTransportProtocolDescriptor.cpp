@@ -42,7 +42,7 @@ TSDUCK_SOURCE;
 
 TS_XML_TABSPEC_DESCRIPTOR_FACTORY(ts::TransportProtocolDescriptor, MY_XML_NAME, MY_TID);
 TS_ID_DESCRIPTOR_FACTORY(ts::TransportProtocolDescriptor, ts::EDID::TableSpecific(MY_DID, MY_TID));
-TS_ID_DESCRIPTOR_DISPLAY(ts::TransportProtocolDescriptor::DisplayDescriptor, ts::EDID::TableSpecific(MY_DID, MY_TID));
+TS_FACTORY_REGISTER(ts::TransportProtocolDescriptor::DisplayDescriptor, ts::EDID::TableSpecific(MY_DID, MY_TID));
 
 
 //----------------------------------------------------------------------------
@@ -318,7 +318,7 @@ void ts::TransportProtocolDescriptor::DisplayDescriptor(TablesDisplay& display, 
 
     if (size >= 3) {
         const uint16_t proto = GetUInt16(data);
-        strm << margin << "Protocol id: " << DVBNameFromSection(u"MHPTransportProtocolId", proto, names::BOTH_FIRST) << std::endl
+        strm << margin << "Protocol id: " << NameFromSection(u"MHPTransportProtocolId", proto, names::BOTH_FIRST) << std::endl
              << margin << UString::Format(u"Transport protocol label: 0x%X (%d)", {data[2], data[2]}) << std::endl;
         data += 3; size -= 3;
 

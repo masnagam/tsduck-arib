@@ -37,7 +37,6 @@
 #include "tsCerrReport.h"
 #include "tsByteBlock.h"
 #include "tsTablesPtr.h"
-#include "tsCASFamily.h"
 #include "tsCRC32.h"
 #include "tsETID.h"
 #include "tsTLVSyntax.h"
@@ -304,12 +303,20 @@ namespace ts {
         }
 
         //!
+        //! This static method checks if a data area of at least 3 bytes can be the start of a long section.
+        //! @param [in] data Address of the data area.
+        //! @param [in] size Size in bytes of the data area.
+        //! @return True if the section is a long one.
+        //!
+        static bool StartLongSection(const uint8_t* data, size_t size);
+
+        //!
         //! Check if the section is a long one.
         //! @return True if the section is a long one.
         //!
         bool isLongSection() const
         {
-            return _is_valid ? ((*_data)[1] & 0x80) != 0 : false;
+            return _is_valid && StartLongSection(_data->data(), _data->size());
         }
 
         //!
@@ -318,7 +325,7 @@ namespace ts {
         //!
         bool isShortSection() const
         {
-            return _is_valid ? ((*_data)[1] & 0x80) == 0 : false;
+            return _is_valid && !isLongSection();
         }
 
         //!
@@ -327,7 +334,7 @@ namespace ts {
         //!
         bool isPrivateSection() const
         {
-            return _is_valid ? ((*_data)[1] & 0x40) != 0 : false;
+            return _is_valid && ((*_data)[1] & 0x40) != 0;
         }
 
         //!
@@ -354,7 +361,7 @@ namespace ts {
         //!
         bool isCurrent() const
         {
-            return isLongSection() ? ((*_data)[5] & 0x01) != 0 : false;
+            return isLongSection() && ((*_data)[5] & 0x01) != 0;
         }
 
         //!
@@ -363,7 +370,7 @@ namespace ts {
         //!
         bool isNext() const
         {
-            return isLongSection() ? ((*_data)[5] & 0x01) == 0 : false;
+            return isLongSection() && ((*_data)[5] & 0x01) == 0;
         }
 
         //!
@@ -598,11 +605,11 @@ namespace ts {
         //! Hexa dump the section on an output stream without interpretation of the payload.
         //! @param [in,out] strm A standard stream in output mode (text mode).
         //! @param [in] indent Indicates the base indentation of lines.
-        //! @param [in] cas CAS family, for CAS-specific information.
+        //! @param [in] cas CAS id, for CAS-specific information.
         //! @param [in] no_header If true, do not display the section header.
         //! @return A reference to the @a strm object.
         //!
-        std::ostream& dump(std::ostream& strm, int indent = 0, CASFamily cas = CAS_OTHER, bool no_header = false) const;
+        std::ostream& dump(std::ostream& strm, int indent = 0, uint16_t cas = CASID_NULL, bool no_header = false) const;
 
         //!
         //! Static method to compute a section size.

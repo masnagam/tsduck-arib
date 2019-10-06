@@ -36,7 +36,7 @@
 #include "tsBinaryTable.h"
 #include "tsSectionFile.h"
 #include "tsDVBCharset.h"
-#include "tsxmlTweaksArgs.h"
+#include "tsxmlTweaks.h"
 #include "tsReportWithPrefix.h"
 #include "tsInputRedirector.h"
 #include "tsOutputRedirector.h"
@@ -69,7 +69,8 @@ public:
     bool                  decompile;       // Explicit decompilation.
     bool                  packAndFlush;    // Pack and flush incomplete tables before exiting.
     bool                  xmlModel;        // Display XML model instead of compilation.
-    ts::xml::TweaksArgs   xmlTweaks;       // XML formatting options.
+    bool                  withExtensions;  // XML model with extensions.
+    ts::xml::Tweaks       xmlTweaks;       // XML formatting options.
     const ts::DVBCharset* defaultCharset;  // Default DVB character set to interpret strings.
 };
 
@@ -87,12 +88,13 @@ Options::Options(int argc, char *argv[]) :
     decompile(false),
     packAndFlush(false),
     xmlModel(false),
+    withExtensions(false),
     xmlTweaks(),
     defaultCharset(nullptr)
 {
-    duck.defineOptionsForStandards(*this);
-    duck.defineOptionsForDVBCharset(*this);
-    xmlTweaks.defineOptions(*this);
+    duck.defineArgsForStandards(*this);
+    duck.defineArgsForDVBCharset(*this);
+    xmlTweaks.defineArgs(*this);
 
     option(u"", 0, STRING);
     help(u"",
@@ -109,6 +111,10 @@ Options::Options(int argc, char *argv[]) :
     help(u"decompile",
          u"Decompile all files as binary files into XML files. This is the default "
          u"for .bin files.");
+
+    option(u"extensions", 'e');
+    help(u"extensions",
+         u"With --xml-model, include the content of the available extensions.");
 
     option(u"pack-and-flush");
     help(u"pack-and-flush",
@@ -133,8 +139,8 @@ Options::Options(int argc, char *argv[]) :
 
     analyze(argc, argv);
 
-    duck.loadOptions(*this);
-    xmlTweaks.load(*this);
+    duck.loadArgs(*this);
+    xmlTweaks.loadArgs(duck, *this);
 
     getValues(infiles, u"");
     getValue(outfile, u"output");
@@ -142,6 +148,7 @@ Options::Options(int argc, char *argv[]) :
     decompile = present(u"decompile");
     packAndFlush = present(u"pack-and-flush");
     xmlModel = present(u"xml-model");
+    withExtensions = present(u"extensions");
     outdir = !outfile.empty() && ts::IsDirectory(outfile);
 
     if (!infiles.empty() && xmlModel) {
@@ -172,7 +179,7 @@ namespace {
     bool DisplayModel(Options& opt)
     {
         // Locate the model file.
-        const ts::UString inName(ts::SearchConfigurationFile(u"tsduck.tables.model.xml"));
+        const ts::UString inName(ts::SearchConfigurationFile(TS_XML_TABLES_MODEL));
         if (inName.empty()) {
             opt.error(u"XML model file not found");
             return false;
@@ -184,19 +191,35 @@ namespace {
         if (opt.outdir) {
             // Specified output is a directory, add default name.
             outName.push_back(ts::PathSeparator);
-            outName.append(u"tsduck.tables.model.xml");
+            outName.append(TS_XML_TABLES_MODEL);
         }
         if (!outName.empty()) {
             opt.verbose(u"saving model file to %s", {outName});
         }
 
-        // Redirect input and output, exit in case of error.
-        ts::InputRedirector in(inName, opt);
-        ts::OutputRedirector out(outName, opt);
-
-        // Display / copy the XML model.
-        std::cout << std::cin.rdbuf();
-        return true;
+        // Load and save the model.
+        if (opt.withExtensions) {
+            // The extensions shall be loaded, use a DOM object to load the
+            // main model and its extensions, then save it in a file.
+            ts::xml::Document doc;
+            if (!ts::SectionFile::LoadModel(doc)) {
+                return false;
+            }
+            if (outName.empty()) {
+                std::cout << doc.toString();
+                return true;
+            }
+            else {
+                return doc.save(outName);
+            }
+        }
+        else {
+            // Redirect input and output, exit in case of error.
+            ts::InputRedirector in(inName, opt);
+            ts::OutputRedirector out(outName, opt);
+            std::cout << std::cin.rdbuf();
+            return true;
+        }
     }
 }
 
@@ -223,7 +246,7 @@ namespace {
         }
 
         ts::SectionFile file(opt.duck);
-        file.setTweaks(opt.xmlTweaks.tweaks());
+        file.setTweaks(opt.xmlTweaks);
         file.setCRCValidation(ts::CRC32::CHECK);
 
         ts::ReportWithPrefix report(opt, ts::BaseName(infile) + u": ");

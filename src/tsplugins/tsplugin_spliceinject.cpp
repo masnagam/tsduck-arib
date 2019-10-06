@@ -716,7 +716,7 @@ void ts::SpliceInjectPlugin::processSectionMessage(const uint8_t* addr, size_t s
         SectionPtr sec(*it);
         if (!sec.isNull()) {
             if (sec->tableId() != TID_SCTE35_SIT) {
-                tsp->error(u"unexpected section, %s, ignored", {names::TID(sec->tableId(), CAS_OTHER, names::VALUE)});
+                tsp->error(u"unexpected section, %s, ignored", {names::TID(sec->tableId(), CASID_NULL, names::VALUE)});
             }
             else {
                 CommandPtr cmd(new SpliceCommand(this, sec));
@@ -842,7 +842,7 @@ ts::UString ts::SpliceInjectPlugin::SpliceCommand::toString() const
     }
     else {
         // Command name.
-        UString name(DVBNameFromSection(u"SpliceCommandType", sit.splice_command_type));
+        UString name(NameFromSection(u"SpliceCommandType", sit.splice_command_type));
         if (sit.splice_command_type == SPLICE_INSERT) {
             name.append(sit.splice_insert.splice_out ? u" out" : u" in");
         }

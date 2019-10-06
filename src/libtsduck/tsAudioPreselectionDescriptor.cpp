@@ -42,7 +42,7 @@ TSDUCK_SOURCE;
 
 TS_XML_DESCRIPTOR_FACTORY(ts::AudioPreselectionDescriptor, MY_XML_NAME);
 TS_ID_DESCRIPTOR_FACTORY(ts::AudioPreselectionDescriptor, ts::EDID::ExtensionDVB(MY_EDID));
-TS_ID_DESCRIPTOR_DISPLAY(ts::AudioPreselectionDescriptor::DisplayDescriptor, ts::EDID::ExtensionDVB(MY_EDID));
+TS_FACTORY_REGISTER(ts::AudioPreselectionDescriptor::DisplayDescriptor, ts::EDID::ExtensionDVB(MY_EDID));
 
 
 //----------------------------------------------------------------------------
@@ -120,7 +120,7 @@ void ts::AudioPreselectionDescriptor::serialize(DuckContext& duck, Descriptor& d
                          (it->aux_component_tags.empty() ? 0x00 : 0x02) |
                          (it->future_extension.empty() ? 0x00 : 0x01));
 
-        if (!it->ISO_639_language_code.empty() && !SerializeLanguageCode(duck, *bbp, it->ISO_639_language_code)) {
+        if (!it->ISO_639_language_code.empty() && !SerializeLanguageCode(*bbp, it->ISO_639_language_code)) {
             desc.invalidate();
             return;
         }
@@ -242,7 +242,7 @@ void ts::AudioPreselectionDescriptor::DisplayDescriptor(TablesDisplay& display, 
         for (bool valid = true; valid && numEntries > 0 && size >= 2; numEntries--) {
 
             strm << margin << UString::Format(u"- Preselection id: %d", {data[0] >> 3}) << std::endl
-                 << margin << "  Audio rendering indication: " << DVBNameFromSection(u"AudioPreselectionRendering", data[0] & 0x07, names::DECIMAL_FIRST) << std::endl
+                 << margin << "  Audio rendering indication: " << NameFromSection(u"AudioPreselectionRendering", data[0] & 0x07, names::DECIMAL_FIRST) << std::endl
                  << margin << "  Audio description: " << UString::YesNo((data[1] & 0x80) != 0) << std::endl
                  << margin << "  Spoken subtitles: " << UString::YesNo((data[1] & 0x40) != 0) << std::endl
                  << margin << "  Dialogue enhancement: " << UString::YesNo((data[1] & 0x20) != 0) << std::endl

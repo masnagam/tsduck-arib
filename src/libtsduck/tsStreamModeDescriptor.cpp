@@ -41,7 +41,7 @@ TSDUCK_SOURCE;
 
 TS_XML_DESCRIPTOR_FACTORY(ts::StreamModeDescriptor, MY_XML_NAME);
 TS_ID_DESCRIPTOR_FACTORY(ts::StreamModeDescriptor, ts::EDID::Standard(MY_DID));
-TS_ID_DESCRIPTOR_DISPLAY(ts::StreamModeDescriptor::DisplayDescriptor, ts::EDID::Standard(MY_DID));
+TS_FACTORY_REGISTER(ts::StreamModeDescriptor::DisplayDescriptor, ts::EDID::Standard(MY_DID));
 
 
 //----------------------------------------------------------------------------
@@ -106,7 +106,7 @@ void ts::StreamModeDescriptor::DisplayDescriptor(TablesDisplay& display, DID did
     if (size >= 2) {
         const uint8_t mode = GetUInt8(data);
         data += 2; size -= 2;
-        strm << margin << UString::Format(u"Stream mode: %s", {DVBNameFromSection(u"DSMCCStreamMode", mode, names::HEXA_FIRST)}) << std::endl;
+        strm << margin << UString::Format(u"Stream mode: %s", {NameFromSection(u"DSMCCStreamMode", mode, names::HEXA_FIRST)}) << std::endl;
     }
 
     display.displayExtraData(data, size, indent);

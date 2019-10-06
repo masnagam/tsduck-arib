@@ -169,9 +169,10 @@ namespace ts {
         //!
         //! Check that an XML element has the right name for this table.
         //! @param [in] element XML element to check.
+        //! @param [in] legacy_name If not null, specifies an alternate legacy name.
         //! @return True on success, false on error.
         //!
-        bool checkXMLName(const xml::Element* element) const;
+        bool checkXMLName(const xml::Element* element, const UChar* legacy_name = nullptr) const;
 
         //!
         //! This static method serializes a DVB string with a required fixed size.
@@ -185,12 +186,19 @@ namespace ts {
 
         //!
         //! This static method serializes a 3-byte language or country code.
-        //! @param [in,out] duck TSDuck execution context.
         //! @param [in,out] bb A byte-block where @a str will be appended if its size is correct.
         //! @param [in] str String to serialize.
+        //! @param [in] allow_empty If true, an empty string is allowed and serialized as zeroes.
         //! @return True if the size has the required length and has been serialized.
         //!
-        static bool SerializeLanguageCode(DuckContext& duck, ByteBlock& bb, const UString& str);
+        static bool SerializeLanguageCode(ByteBlock& bb, const UString& str, bool allow_empty = false);
+
+        //!
+        //! This static method deserializes a 3-byte language or country code.
+        //! @param [in] data Address of a 3-byte memory area.
+        //! @return Deserialized string.
+        //!
+        static UString DeserializeLanguageCode(const uint8_t* data);
 
     private:
         const Standards _standards;  // Defining standards (usually only one).

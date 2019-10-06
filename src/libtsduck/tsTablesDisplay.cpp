@@ -46,8 +46,12 @@ TSDUCK_SOURCE;
 // Constructor and destructors.
 //----------------------------------------------------------------------------
 
-ts::TablesDisplay::TablesDisplay(const TablesDisplayArgs& options) :
-    _opt(options)
+ts::TablesDisplay::TablesDisplay(DuckContext& d) :
+    _duck(d),
+    _raw_dump(false),
+    _raw_flags(UString::HEXA),
+    _tlv_syntax(),
+    _min_nested_tlv(0)
 {
 }
 
@@ -57,12 +61,80 @@ ts::TablesDisplay::~TablesDisplay()
 
 
 //----------------------------------------------------------------------------
+// Define command line options in an Args.
+//----------------------------------------------------------------------------
+
+void ts::TablesDisplay::defineArgs(Args& args) const
+{
+    args.option(u"c-style", 'c');
+    args.help(u"c-style",
+              u"Same as --raw-dump (no interpretation of section) but dump the "
+              u"bytes in C-language style.");
+
+    args.option(u"nested-tlv", 0, Args::POSITIVE, 0, 1, 0, 0, true);
+    args.help(u"nested-tlv", u"min-size",
+              u"With option --tlv, try to interpret the value field of each TLV record as "
+              u"another TLV area. If the min-size value is specified, the nested TLV "
+              u"interpretation is performed only on value fields larger than this size. "
+              u"The syntax of the nested TLV is the same as the enclosing TLV.");
+
+    args.option(u"raw-dump", 'r');
+    args.help(u"raw-dump", u"Raw dump of section, no interpretation.");
+
+    args.option(u"tlv", 0, Args::STRING, 0, Args::UNLIMITED_COUNT);
+    args.help(u"tlv", u"For sections of unknown types, this option specifies how to interpret "
+              u"some parts of the section payload as TLV records. Several --tlv options "
+              u"are allowed, each one describes a part of the section payload.\n\n"
+              u"Each syntax string has the form \"start,size,tagSize,lengthSize,order\". "
+              u"The start and size fields define the offset and size of the TLV area "
+              u"in the section payload. If the size field is \"auto\", the TLV extends up "
+              u"to the end of the section. If the start field is \"auto\", the longest "
+              u"TLV area in the section payload will be used. The fields tagSize and "
+              u"lengthSize indicate the size in bytes of the Tag and Length fields in "
+              u"the TLV structure. The field order must be either \"msb\" or \"lsb\" and "
+              u"indicates the byte order of the Tag and Length fields.\n\n"
+              u"All fields are optional. The default values are \"auto,auto,1,1,msb\".");
+}
+
+
+//----------------------------------------------------------------------------
+// Load arguments from command line.
+//----------------------------------------------------------------------------
+
+bool ts::TablesDisplay::loadArgs(DuckContext& duck, Args &args)
+{
+    _raw_dump = args.present(u"raw-dump");
+    _raw_flags = UString::HEXA;
+    if (args.present(u"c-style")) {
+        _raw_dump = true;
+        _raw_flags |= UString::C_STYLE;
+    }
+
+    // The --nested-tlv has an optional value.
+    // If present without value, use 1, meaning all non-empty TLV records.
+    // If not present, we use 0, which means no nested TLV.
+    _min_nested_tlv = args.present(u"nested-tlv") ? args.intValue<size_t>(u"nested-tlv", 1) : 0;
+
+    // Get all TLV syntax specifications.
+    _tlv_syntax.clear();
+    const size_t count = args.count(u"tlv");
+    for (size_t i = 0; i < count; ++i) {
+        TLVSyntax tlv;
+        tlv.fromString(args.value(u"tlv", u"", i), args);
+        _tlv_syntax.push_back(tlv);
+    }
+    std::sort(_tlv_syntax.begin(), _tlv_syntax.end());
+    return true;
+}
+
+
+//----------------------------------------------------------------------------
 // A utility method to dump extraneous bytes after expected data.
 //----------------------------------------------------------------------------
 
 std::ostream& ts::TablesDisplay::displayExtraData(const void* data, size_t size, int indent)
 {
-    std::ostream& strm(_opt.duck.out());
+    std::ostream& strm(_duck.out());
 
     if (size > 0) {
         strm << std::string(indent, ' ') << "Extraneous " << size << " bytes:" << std::endl
@@ -76,9 +148,9 @@ std::ostream& ts::TablesDisplay::displayExtraData(const void* data, size_t size,
 // Display a table on the output stream.
 //----------------------------------------------------------------------------
 
-std::ostream& ts::TablesDisplay::displayTable(const BinaryTable& table, int indent, CASFamily cas)
+std::ostream& ts::TablesDisplay::displayTable(const BinaryTable& table, int indent, uint16_t cas)
 {
-    std::ostream& strm(_opt.duck.out());
+    std::ostream& strm(_duck.out());
 
     // Filter invalid tables
     if (!table.isValid()) {
@@ -86,17 +158,17 @@ std::ostream& ts::TablesDisplay::displayTable(const BinaryTable& table, int inde
     }
 
     // Display hexa dump of each section in the table
-    if (_opt.raw_dump) {
+    if (_raw_dump) {
         for (size_t i = 0; i < table.sectionCount(); ++i) {
             const Section& section(*table.sectionAt(i));
-            strm << UString::Dump(section.content(), section.size(), _opt.raw_flags | UString::BPL, indent, 16) << std::endl;
+            strm << UString::Dump(section.content(), section.size(), _raw_flags | UString::BPL, indent, 16) << std::endl;
         }
         return strm;
     }
 
     const std::string margin(indent, ' ');
     const TID tid = table.tableId();
-    cas = _opt.duck.casFamily(cas);
+    cas = _duck.casId(cas);
 
     // Compute total size of table
     size_t total_size = 0;
@@ -138,9 +210,9 @@ std::ostream& ts::TablesDisplay::displayTable(const BinaryTable& table, int inde
 // Display a section on the output stream.
 //----------------------------------------------------------------------------
 
-std::ostream& ts::TablesDisplay::displaySection(const Section& section, int indent, CASFamily cas, bool no_header)
+std::ostream& ts::TablesDisplay::displaySection(const Section& section, int indent, uint16_t cas, bool no_header)
 {
-    std::ostream& strm(_opt.duck.out());
+    std::ostream& strm(_duck.out());
 
     // Filter invalid section
     if (!section.isValid()) {
@@ -148,14 +220,14 @@ std::ostream& ts::TablesDisplay::displaySection(const Section& section, int inde
     }
 
     // Display hexa dump of the section
-    if (_opt.raw_dump) {
-        strm << UString::Dump(section.content(), section.size(), _opt.raw_flags | UString::BPL, indent, 16) << std::endl;
+    if (_raw_dump) {
+        strm << UString::Dump(section.content(), section.size(), _raw_flags | UString::BPL, indent, 16) << std::endl;
         return strm;
     }
 
     const std::string margin(indent, ' ');
     const TID tid = section.tableId();
-    cas = _opt.duck.casFamily(cas);
+    cas = _duck.casId(cas);
 
     // Display common header lines.
     if (!no_header) {
@@ -189,9 +261,13 @@ std::ostream& ts::TablesDisplay::displaySection(const Section& section, int inde
 // Display a section on the output stream.
 //----------------------------------------------------------------------------
 
-std::ostream& ts::TablesDisplay::displaySectionData(const Section& section, int indent, CASFamily cas)
+std::ostream& ts::TablesDisplay::displaySectionData(const Section& section, int indent, uint16_t cas)
 {
-    DisplaySectionFunction handler = TablesFactory::Instance()->getSectionDisplay(section.tableId());
+    // Update CAS with default one if necessary.
+    cas = _duck.casId(cas);
+
+    // Find the display handler for this table id (and maybe CAS).
+    DisplaySectionFunction handler = TablesFactory::Instance()->getSectionDisplay(section.tableId(), cas);
 
     if (handler != nullptr) {
         handler(*this, section, indent);
@@ -199,7 +275,7 @@ std::ostream& ts::TablesDisplay::displaySectionData(const Section& section, int 
     else {
         displayUnkownSectionData(section, indent);
     }
-    return _opt.duck.out();
+    return _duck.out();
 }
 
 
@@ -207,24 +283,38 @@ std::ostream& ts::TablesDisplay::displaySectionData(const Section& section, int 
 // Display the payload of a section on the output stream as a one-line "log" message.
 //----------------------------------------------------------------------------
 
-std::ostream& ts::TablesDisplay::logSectionData(const Section& section, const UString& header, size_t max_bytes, CASFamily cas)
+std::ostream& ts::TablesDisplay::logSectionData(const Section& section, const UString& header, size_t max_bytes, uint16_t cas)
 {
-    std::ostream& strm(_opt.duck.out());
+    // Update CAS with default one if necessary.
+    cas = _duck.casId(cas);
 
+    // Find the log handler for this table id (and maybe CAS).
+    LogSectionFunction handler = TablesFactory::Instance()->getSectionLog(section.tableId(), cas);
+    if (handler == nullptr) {
+        handler = LogUnknownSectionData;
+    }
+
+    // Output exactly one line.
+    std::ostream& strm(_duck.out());
+    strm << header << handler(section, max_bytes) << std::endl;
+    return strm;
+}
+
+
+//----------------------------------------------------------------------------
+// Log the content of an unknown section.
+//----------------------------------------------------------------------------
+
+ts::UString ts::TablesDisplay::LogUnknownSectionData(const Section& section, size_t max_bytes)
+{
     // Number of bytes to log.
     size_t log_size = section.payloadSize();
     if (max_bytes > 0 && max_bytes < log_size) {
         log_size = max_bytes;
     }
 
-    // Output exactly one line.
-    strm << header << UString::Dump(section.payload(), log_size, UString::SINGLE_LINE);
-    if (section.payloadSize() > log_size) {
-        strm << " ...";
-    }
-    strm << std::endl;
-
-    return strm;
+    // Build log line.
+    return UString::Dump(section.payload(), log_size, UString::SINGLE_LINE) + (section.payloadSize() > log_size ? u" ..." : u"");
 }
 
 
@@ -234,7 +324,7 @@ std::ostream& ts::TablesDisplay::logSectionData(const Section& section, const US
 
 void ts::TablesDisplay::displayUnkownDescriptor(DID did, const uint8_t * payload, size_t size, int indent, TID tid, PDS pds)
 {
-    _opt.duck.out() << UString::Dump(payload, size, UString::HEXA | UString::ASCII | UString::OFFSET, indent);
+    _duck.out() << UString::Dump(payload, size, UString::HEXA | UString::ASCII | UString::OFFSET, indent);
 }
 
 
@@ -244,7 +334,7 @@ void ts::TablesDisplay::displayUnkownDescriptor(DID did, const uint8_t * payload
 
 void ts::TablesDisplay::displayUnkownSectionData(const ts::Section& section, int indent)
 {
-    std::ostream& strm(_opt.duck.out());
+    std::ostream& strm(_duck.out());
     const std::string margin(indent, ' ');
 
     // The table id extension was not yet displayed since it depends on the table id.
@@ -260,7 +350,7 @@ void ts::TablesDisplay::displayUnkownSectionData(const ts::Section& section, int
     size_t index = 0;
 
     // Loop on all possible TLV syntaxen.
-    for (TLVSyntaxVector::const_iterator it = _opt.tlv_syntax.begin(); it != _opt.tlv_syntax.end() && index < payloadSize; ++it) {
+    for (TLVSyntaxVector::const_iterator it = _tlv_syntax.begin(); it != _tlv_syntax.end() && index < payloadSize; ++it) {
 
         // Can we locate a TLV area after current index?
         size_t tlvStart = 0;
@@ -302,7 +392,7 @@ void ts::TablesDisplay::displayTLV(const uint8_t* data,
                                    int innerIndent,
                                    const TLVSyntax& tlv)
 {
-    std::ostream& strm(_opt.duck.out());
+    std::ostream& strm(_duck.out());
 
     // We use the same syntax for the optional embedded TLV, except that it is automatically located.
     TLVSyntax tlvInner(tlv);
@@ -340,7 +430,7 @@ void ts::TablesDisplay::displayTLV(const uint8_t* data,
         // Display the value field.
         size_t tlvInnerStart = 0;
         size_t tlvInnerSize = 0;
-        if (_opt.min_nested_tlv > 0 && valueSize >= _opt.min_nested_tlv && tlvInner.locateTLV(value, valueSize, tlvInnerStart, tlvInnerSize)) {
+        if (_min_nested_tlv > 0 && valueSize >= _min_nested_tlv && tlvInner.locateTLV(value, valueSize, tlvInnerStart, tlvInnerSize)) {
             // Found a nested TLV area.
             strm << std::endl;
             displayTLV(value, tlvInnerStart, tlvInnerSize, valueOffset, indent, innerIndent + 2, tlvInner);
@@ -372,13 +462,13 @@ void ts::TablesDisplay::displayTLV(const uint8_t* data,
 // Display a descriptor on the output stream.
 //----------------------------------------------------------------------------
 
-std::ostream& ts::TablesDisplay::displayDescriptor(const Descriptor& desc, int indent, TID tid, PDS pds, CASFamily cas)
+std::ostream& ts::TablesDisplay::displayDescriptor(const Descriptor& desc, int indent, TID tid, PDS pds, uint16_t cas)
 {
     if (desc.isValid()) {
-        return displayDescriptorData(desc.tag(), desc.payload(), desc.payloadSize(), indent, tid, _opt.duck.actualPDS(pds), cas);
+        return displayDescriptorData(desc.tag(), desc.payload(), desc.payloadSize(), indent, tid, _duck.actualPDS(pds), cas);
     }
     else {
-        return _opt.duck.out();
+        return _duck.out();
     }
 }
 
@@ -387,16 +477,16 @@ std::ostream& ts::TablesDisplay::displayDescriptor(const Descriptor& desc, int i
 // Display a list of descriptors from a memory area
 //----------------------------------------------------------------------------
 
-std::ostream& ts::TablesDisplay::displayDescriptorList(const Section& section, const void* data, size_t size, int indent, CASFamily cas)
+std::ostream& ts::TablesDisplay::displayDescriptorList(const Section& section, const void* data, size_t size, int indent, uint16_t cas)
 {
-    std::ostream& strm(_opt.duck.out());
+    std::ostream& strm(_duck.out());
     const std::string margin(indent, ' ');
     const uint8_t* desc_start = reinterpret_cast<const uint8_t*>(data);
     size_t desc_index = 0;
     const TID tid = section.tableId();
 
     // Compute default PDS. Use fake PDS for descriptors in ATSC context.
-    const PDS default_pds = _opt.duck.actualPDS(0);
+    const PDS default_pds = _duck.actualPDS(0);
     PDS pds = default_pds;
 
     // Loop across all descriptors
@@ -445,9 +535,9 @@ std::ostream& ts::TablesDisplay::displayDescriptorList(const Section& section, c
 // Display a list of descriptors.
 //----------------------------------------------------------------------------
 
-std::ostream& ts::TablesDisplay::displayDescriptorList(const DescriptorList& list, int indent, CASFamily cas)
+std::ostream& ts::TablesDisplay::displayDescriptorList(const DescriptorList& list, int indent, uint16_t cas)
 {
-    std::ostream& strm(_opt.duck.out());
+    std::ostream& strm(_duck.out());
     const std::string margin(indent, ' ');
     const TID tid = list.tableId();
 
@@ -456,9 +546,9 @@ std::ostream& ts::TablesDisplay::displayDescriptorList(const DescriptorList& lis
         if (!desc.isNull()) {
             const PDS pds = list.privateDataSpecifier(i);
             strm << margin << "- Descriptor " << i << ": "
-                 << names::DID(desc->tag(), _opt.duck.actualPDS(pds), tid, names::VALUE | names::BOTH) << ", "
+                 << names::DID(desc->tag(), _duck.actualPDS(pds), tid, names::VALUE | names::BOTH) << ", "
                  << desc->size() << " bytes" << std::endl;
-            displayDescriptor(*desc, indent + 2, tid, _opt.duck.actualPDS(pds), cas);
+            displayDescriptor(*desc, indent + 2, tid, _duck.actualPDS(pds), cas);
         }
     }
 
@@ -470,15 +560,15 @@ std::ostream& ts::TablesDisplay::displayDescriptorList(const DescriptorList& lis
 // Display a descriptor on the output stream.
 //----------------------------------------------------------------------------
 
-std::ostream& ts::TablesDisplay::displayDescriptorData(DID did, const uint8_t* payload, size_t size, int indent, TID tid, ts::PDS pds, CASFamily cas)
+std::ostream& ts::TablesDisplay::displayDescriptorData(DID did, const uint8_t* payload, size_t size, int indent, TID tid, PDS pds, uint16_t cas)
 {
-    std::ostream& strm(_opt.duck.out());
+    std::ostream& strm(_duck.out());
 
     // Compute extended descriptor id.
     EDID edid;
     if (did >= 0x80) {
         // Private descriptor.
-        edid = EDID::Private(did, _opt.duck.actualPDS(pds));
+        edid = EDID::Private(did, _duck.actualPDS(pds));
     }
     else if (did == DID_MPEG_EXTENSION && size >= 1) {
         // MPEG extension descriptor, the extension id is in the first byte of the payload.
@@ -486,7 +576,7 @@ std::ostream& ts::TablesDisplay::displayDescriptorData(DID did, const uint8_t* p
         edid = EDID::ExtensionMPEG(ext);
         size--;
         // Display extended descriptor header
-        strm << std::string(indent, ' ') << "MPEG extended descriptor: " << DVBNameFromSection(u"MPEGExtendedDescriptorId", ext, names::VALUE | names::BOTH) << std::endl;
+        strm << std::string(indent, ' ') << "MPEG extended descriptor: " << NameFromSection(u"MPEGExtendedDescriptorId", ext, names::VALUE | names::BOTH) << std::endl;
     }
     else if (did == DID_DVB_EXTENSION && size >= 1) {
         // Extension descriptor, the extension id is in the first byte of the payload.
@@ -505,10 +595,10 @@ std::ostream& ts::TablesDisplay::displayDescriptorData(DID did, const uint8_t* p
     DisplayDescriptorFunction handler = TablesFactory::Instance()->getDescriptorDisplay(edid, tid);
 
     if (handler != nullptr) {
-        handler(*this, did, payload, size, indent, tid, _opt.duck.actualPDS(pds));
+        handler(*this, did, payload, size, indent, tid, _duck.actualPDS(pds));
     }
     else {
-        displayUnkownDescriptor(did, payload, size, indent, tid, _opt.duck.actualPDS(pds));
+        displayUnkownDescriptor(did, payload, size, indent, tid, _duck.actualPDS(pds));
     }
 
     return strm;

@@ -41,7 +41,7 @@ TSDUCK_SOURCE;
 
 TS_XML_TABSPEC_DESCRIPTOR_FACTORY(ts::IPMACPlatformNameDescriptor, MY_XML_NAME, MY_TID);
 TS_ID_DESCRIPTOR_FACTORY(ts::IPMACPlatformNameDescriptor, ts::EDID::TableSpecific(MY_DID, MY_TID));
-TS_ID_DESCRIPTOR_DISPLAY(ts::IPMACPlatformNameDescriptor::DisplayDescriptor, ts::EDID::TableSpecific(MY_DID, MY_TID));
+TS_FACTORY_REGISTER(ts::IPMACPlatformNameDescriptor::DisplayDescriptor, ts::EDID::TableSpecific(MY_DID, MY_TID));
 
 
 //----------------------------------------------------------------------------
@@ -75,7 +75,7 @@ ts::IPMACPlatformNameDescriptor::IPMACPlatformNameDescriptor(DuckContext& duck, 
 void ts::IPMACPlatformNameDescriptor::serialize(DuckContext& duck, Descriptor& desc) const
 {
     ByteBlockPtr bbp(serializeStart());
-    if (SerializeLanguageCode(duck, *bbp, language_code)) {
+    if (SerializeLanguageCode(*bbp, language_code)) {
         bbp->append(duck.toDVB(text));
         serializeEnd(desc, bbp);
     }
@@ -97,7 +97,7 @@ void ts::IPMACPlatformNameDescriptor::deserialize(DuckContext& duck, const Descr
     _is_valid = desc.isValid() && desc.tag() == _tag && size >= 3;
 
     if (_is_valid) {
-        language_code = UString::FromDVB(data, 3);
+        language_code = DeserializeLanguageCode(data);
         text = duck.fromDVB(data + 3, size - 3);
     }
 }
@@ -113,7 +113,7 @@ void ts::IPMACPlatformNameDescriptor::DisplayDescriptor(TablesDisplay& display, 
     const std::string margin(indent, ' ');
 
     if (size >= 3) {
-        strm << margin << "Language: " << UString::FromDVB(data, 3) << std::endl
+        strm << margin << "Language: " << DeserializeLanguageCode(data) << std::endl
              << margin << "Platform name: " << display.duck().fromDVB(data + 3, size - 3) << std::endl;
         size = 0;
     }

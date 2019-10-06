@@ -8,11 +8,12 @@
   <ItemGroup>
     <Xml Include="..\..\src\libtsduck\tsduck.tables.model.xml" />
     <Xml Include="..\..\src\libtsduck\tsduck.channels.model.xml" />
+    <Xml Include="..\..\src\libtsduck\tsduck.keytable.model.xml" />
     <Xml Include="..\..\src\libtsduck\tsduck.hfbands.model.xml" />
     <Xml Include="..\..\src\libtsduck\tsduck.hfbands.xml" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\src\libtsduck\tsduck.dvb.names" />
+    <None Include="..\..\src\libtsduck\tsduck.names" />
     <None Include="..\..\src\libtsduck\tsduck.oui.names" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -40,7 +41,7 @@
     <Import Project="msvc-common-end.props" />
   </ImportGroup>
   <Target Name="AfterBuild">
-    <CreateItem Include="..\..\src\libtsduck\tsduck.*.xml;..\..\src\libtsduck\tsduck.*.names">
+    <CreateItem Include="..\..\src\libtsduck\tsduck*.xml;..\..\src\libtsduck\tsduck*.names">
       <Output TaskParameter="Include" ItemName="ConfigFiles" />
     </CreateItem>
     <Copy SourceFiles="@(ConfigFiles)" DestinationFolder="$(OutDir)" />

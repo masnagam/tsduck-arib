@@ -333,6 +333,16 @@ namespace ts {
         PID_PSIP       = 0x1FFB, //!< PID for ATSC Program and System Information Protocol (contains most ATSC tables)
         PID_ATSC_LAST  = 0x1FFE, //!< Last reserved PID for ATSC.
 
+        // Valid in ISDB context:
+
+        PID_DCT        = 0x0017, //!< PID for ISDB Download Control Table
+        PID_PCAT       = 0x0022, //!< PID for ISDB Partial Content Announcement Table
+        PID_SDTT       = 0x0023, //!< PID for ISDB Software Download Trigger Table
+        PID_BIT        = 0x0024, //!< PID for ISDB Broadcaster Information Table
+        PID_NBIT       = 0x0025, //!< PID for ISDB Network Board Information Table
+        PID_LDT        = 0x0025, //!< PID for ISDB Linked Description Table
+        PID_CDT        = 0x0029, //!< PID for ISDB Common Data Table
+
         // Valid in all MPEG contexts:
 
         PID_NULL       = 0x1FFF, //!< PID for Null packets (stuffing)
@@ -899,7 +909,23 @@ namespace ts {
 
         // Valid in SCTE context:
 
+        TID_SCTE18_EAS    = 0xD8, //!< Table id for SCTE 18 Emergency Alert System
         TID_SCTE35_SIT    = 0xFC, //!< Table id for SCTE 35 Splice Information Table
+
+        // Valid in ISDB context:
+
+        TID_DCT           = 0xC0, //!< Table id for Download Control Table (ISDB)
+        TID_DLT           = 0xC1, //!< Table id for DownLoad Table (ISDB)
+        TID_PCAT          = 0xC2, //!< Table id for Partial Content Announcement Table (ISDB)
+        TID_SDTT          = 0xC3, //!< Table id for Software Download Trigger Table (ISDB)
+        TID_BIT           = 0xC4, //!< Table id for Broadcaster Information Table (ISDB)
+        TID_NBIT_BODY     = 0xC5, //!< Table id for Network Board Information Table (body) (ISDB)
+        TID_NBIT_INFO     = 0xC6, //!< Table id for Network Board Information Table (reference information) (ISDB)
+        TID_LDT           = 0xC7, //!< Table id for Linked Description Table (ISDB)
+        TID_CDT           = 0xC8, //!< Table id for Common Data Table (ISDB)
+        TID_LIT           = 0xD0, //!< Table id for Local Event Information Table (ISDB)
+        TID_ERT           = 0xD1, //!< Table id for Event Relation Table (ISDB)
+        TID_ITT           = 0xD2, //!< Table id for Index Transmission Table (ISDB)
     };
 
     constexpr size_t TID_MAX = 0x100; //!< Maximum number of TID values.
@@ -920,7 +946,8 @@ namespace ts {
         PDS_LOGIWAYS  = 0x000000A2, //!< Private data specifier for Logiways.
         PDS_CANALPLUS = 0x000000C0, //!< Private data specifier for Canal+.
         PDS_EUTELSAT  = 0x0000055F, //!< Private data specifier for EutelSat.
-        PDS_ATSC      = 0x41545343, //!< Fake private data specifier for ATSC descriptors (value is "ATSC" in ASCII)
+        PDS_ATSC      = 0x41545343, //!< Fake private data specifier for ATSC descriptors (value is "ATSC" in ASCII).
+        PDS_ISDB      = 0x49534442, //!< Fake private data specifier for ISDB descriptors (value is "ISDB" in ASCII).
         PDS_NULL      = 0xFFFFFFFF, //!< An invalid private data specifier, can be used as placeholder.
     };
 
@@ -1116,6 +1143,13 @@ namespace ts {
         DID_UNT_SUBGROUP_ASSOC  = 0x0B, //!< DID for UNT ssu_subgroup_association_descriptor
         DID_UNT_ENHANCED_MSG    = 0x0C, //!< DID for UNT enhanced_message_descriptor
         DID_UNT_SSU_URI         = 0x0D, //!< DID for UNT ssu_uri_descriptor
+
+        // Valid in EAS (Emergency Alert System, SCTE 18).
+
+        DID_EAS_INBAND_DETAILS  = 0x00,  //!< DID for SCTE 18 In-Band Details Channel Descriptor
+        DID_EAS_INBAND_EXCEPTS  = 0x01,  //!< DID for SCTE 18 In-Band Exceptions Channel Descriptor
+        DID_EAS_AUDIO_FILE      = 0x02,  //!< DID for SCTE 18 Audio File Descriptor
+        DID_EAS_METADATA        = 0x03,  //!< DID for SCTE 18 / SCTE 164 Emergency Alert Metadata Descriptor
 
         // Valid in a SIT (Splice Information Table, SCTE 35).
 
@@ -1390,11 +1424,16 @@ namespace ts {
     enum : uint8_t {
         SCRAMBLING_DVB_CSA1      = 0x01, //!< DVB-CSA1
         SCRAMBLING_DVB_CSA2      = 0x02, //!< DVB-CSA2
-        SCRAMBLING_DVB_CSA3_STD  = 0x03, //!< DVB-CSA3, standard mode
-        SCRAMBLING_DVB_CSA3_MIN  = 0x04, //!< DVB-CSA3, minimally enhanced mode
-        SCRAMBLING_DVB_CSA3_FULL = 0x05, //!< DVB-CSA3, fully enhanced mode
+        SCRAMBLING_DVB_CSA3      = 0x03, //!< DVB-CSA3
+        SCRAMBLING_DVB_CSA3_MIN  = 0x04, //!< DVB-CSA3, minimally enhanced mode (obsolete)
+        SCRAMBLING_DVB_CSA3_FULL = 0x05, //!< DVB-CSA3, fully enhanced mode (obsolete)
         SCRAMBLING_DVB_CISSA1    = 0x10, //!< DVB-CISSA v1
         SCRAMBLING_ATIS_IIF_IDSA = 0x70, //!< ATIS IIF IDSA for MPEG-2 TS
+        SCRAMBLING_USER_MIN      = 0x80, //!< First user-defined value.
+        SCRAMBLING_DUCK_AES_CBC  = 0xF0, //!< TSDuck-defined value, AES-CBC (with externally-defined IV).
+        SCRAMBLING_DUCK_AES_CTR  = 0xF1, //!< TSDuck-defined value, AES-CTR (with externally-defined IV).
+        SCRAMBLING_USER_MAX      = 0xFE, //!< Last user-defined value.
+        SCRAMBLING_RESERVED      = 0xFF, //!< Reserved value.
     };
 
     //---------------------------------------------------------------------
@@ -1474,14 +1513,25 @@ namespace ts {
     //---------------------------------------------------------------------
 
     enum : uint16_t {
+        CASID_NULL            = 0x0000,  //!< Null/reserved/invalid CAS Id. Can be used to indicated "unspecified".
         CASID_MEDIAGUARD_MIN  = 0x0100,  //!< Minimum CAS Id value for MediaGuard.
         CASID_MEDIAGUARD_MAX  = 0x01FF,  //!< Maximum CAS Id value for MediaGuard.
         CASID_VIACCESS_MIN    = 0x0500,  //!< Minimum CAS Id value for Viaccess.
         CASID_VIACCESS_MAX    = 0x05FF,  //!< Maximum CAS Id value for Viaccess.
+        CASID_IRDETO_MIN      = 0x0600,  //!< Minimum CAS Id value for Irdeto.
+        CASID_IRDETO_MAX      = 0x06FF,  //!< Maximum CAS Id value for Irdeto.
+        CASID_NDS_MIN         = 0x0900,  //!< Minimum CAS Id value for NDS.
+        CASID_NDS_MAX         = 0x09FF,  //!< Maximum CAS Id value for NDS.
+        CASID_CONAX_MIN       = 0x0B00,  //!< Minimum CAS Id value for Conax.
+        CASID_CONAX_MAX       = 0x0BFF,  //!< Maximum CAS Id value for Conax.
+        CASID_CRYPTOWORKS_MIN = 0x0D00,  //!< Minimum CAS Id value for CryptoWorks (Irdeto).
+        CASID_CRYPTOWORKS_MAX = 0x0DFF,  //!< Maximum CAS Id value for CryptoWorks (Irdeto).
         CASID_NAGRA_MIN       = 0x1800,  //!< Minimum CAS Id value for Nagravision.
         CASID_NAGRA_MAX       = 0x18FF,  //!< Maximum CAS Id value for Nagravision.
         CASID_THALESCRYPT_MIN = 0x4A80,  //!< Minimum CAS Id value for ThalesCrypt.
         CASID_THALESCRYPT_MAX = 0x4A8F,  //!< Maximum CAS Id value for ThalesCrypt.
+        CASID_WIDEVINE_MIN    = 0x4AD4,  //!< Minimum CAS Id value for Widevine CAS (Google).
+        CASID_WIDEVINE_MAX    = 0x4AD5,  //!< Maximum CAS Id value for Widevine CAS (Google).
         CASID_SAFEACCESS      = 0x4ADC,  //!< CAS Id value for SafeAccess.
     };
 

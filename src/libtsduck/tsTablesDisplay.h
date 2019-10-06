@@ -33,9 +33,11 @@
 //----------------------------------------------------------------------------
 
 #pragma once
+#include "tsArgsSupplierInterface.h"
 #include "tsMPEG.h"
 #include "tsCASFamily.h"
-#include "tsTablesDisplayArgs.h"
+#include "tsTLVSyntax.h"
+#include "tsDuckContext.h"
 
 namespace ts {
 
@@ -44,13 +46,12 @@ namespace ts {
     class Section;
     class Descriptor;
     class DescriptorList;
-    class TLVSyntax;
 
     //!
     //! A class to display PSI/SI tables.
     //! @ingroup mpeg
     //!
-    class TSDUCKDLL TablesDisplay
+    class TSDUCKDLL TablesDisplay : public ArgsSupplierInterface
     {
         TS_NOBUILD_NOCOPY(TablesDisplay);
     public:
@@ -58,64 +59,65 @@ namespace ts {
         //! Constructor.
         //! By default, all displays are done on @c std::cout.
         //! Use redirect() to redirect the output to a file.
-        //! @param [in] options Table logging options.
+        //! @param [in,out] d TSDuck context.
         //!
-        explicit TablesDisplay(const TablesDisplayArgs& options);
+        explicit TablesDisplay(DuckContext& d);
 
         //!
         //! Virtual destructor.
         //!
         virtual ~TablesDisplay();
 
+        // Implementation of ArgsSupplierInterface.
+        virtual void defineArgs(Args& args) const override;
+        virtual bool loadArgs(DuckContext& duck, Args& args) override;
+
         //!
         //! Get the TSDuck execution context.
         //! @return A reference to the TSDuck execution context.
         //!
-        DuckContext& duck() { return _opt.duck; }
+        DuckContext& duck() { return _duck; }
 
         //!
         //! Display a table on the output stream.
         //! The content of the table is interpreted according to the table id.
         //! @param [in] table The table to display.
         //! @param [in] indent Indentation width.
-        //! @param [in] cas CAS family of the table. If different from CAS_OTHER, override the CAS family in TablesDisplayArgs.
+        //! @param [in] cas CAS id of the table.
         //! @return A reference to the output stream.
         //!
-        virtual std::ostream& displayTable(const BinaryTable& table, int indent = 0, CASFamily cas = CAS_OTHER);
+        virtual std::ostream& displayTable(const BinaryTable& table, int indent = 0, uint16_t cas = CASID_NULL);
 
         //!
         //! Display a section on the output stream.
         //! The content of the table is interpreted according to the table id.
         //! @param [in] section The section to display.
         //! @param [in] indent Indentation width.
-        //! @param [in] cas CAS family of the table. If different from CAS_OTHER, override the CAS family in TablesDisplayArgs.
+        //! @param [in] cas CAS id of the table.
         //! @param [in] no_header If true, do not display the section header.
         //! @return A reference to the output stream.
         //!
-        virtual std::ostream& displaySection(const Section& section, int indent = 0, CASFamily cas = CAS_OTHER, bool no_header = false);
+        virtual std::ostream& displaySection(const Section& section, int indent = 0, uint16_t cas = CASID_NULL, bool no_header = false);
 
         //!
         //! Display the payload of a section on the output stream.
         //! The content of the table is interpreted according to the table id.
         //! @param [in] section The section to display.
         //! @param [in] indent Indentation width.
-        //! @param [in] cas CAS family of the table. If different from CAS_OTHER, override the CAS family in TablesDisplayArgs.
+        //! @param [in] cas CAS id of the table.
         //! @return A reference to the output stream.
         //!
-        virtual std::ostream& displaySectionData(const Section& section, int indent = 0, CASFamily cas = CAS_OTHER);
+        virtual std::ostream& displaySectionData(const Section& section, int indent = 0, uint16_t cas = CASID_NULL);
 
         //!
         //! Display the payload of a section on the output stream as a one-line "log" message.
         //! @param [in] section The section to display.
         //! @param [in] header Header string to display as prefix on the line.
         //! @param [in] max_bytes Maximum number of bytes to log from the section. 0 means unlimited.
-        //! @param [in] cas CAS family of the table. If different from CAS_OTHER, override the CAS family in TablesDisplayArgs.
+        //! @param [in] cas CAS id of the table.
         //! @return A reference to the output stream.
         //!
-        virtual std::ostream& logSectionData(const Section& section,
-                                             const UString& header = UString(),
-                                             size_t max_bytes = 0,
-                                             CASFamily cas = CAS_OTHER);
+        virtual std::ostream& logSectionData(const Section& section, const UString& header = UString(), size_t max_bytes = 0, uint16_t cas = CASID_NULL);
 
         //!
         //! Display a descriptor on the output stream.
@@ -125,14 +127,10 @@ namespace ts {
         //! This is optional. Used by some descriptors the interpretation of which may
         //! vary depending on the table that they are in.
         //! @param [in] pds Private Data Specifier. Used to interpret private descriptors.
-        //! @param [in] cas CAS family of the table. If different from CAS_OTHER, override the CAS family in TablesDisplayArgs.
+        //! @param [in] cas CAS id of the table.
         //! @return A reference to the output stream.
         //!
-        virtual std::ostream& displayDescriptor(const Descriptor& desc,
-                                               int indent = 0,
-                                               TID tid = TID_NULL,
-                                               PDS pds = 0,
-                                               CASFamily cas = CAS_OTHER);
+        virtual std::ostream& displayDescriptor(const Descriptor& desc, int indent = 0, TID tid = TID_NULL, PDS pds = 0, uint16_t cas = CASID_NULL);
 
         //!
         //! Display the payload of a descriptor on the output stream.
@@ -144,7 +142,7 @@ namespace ts {
         //! This is optional. Used by some descriptors the interpretation of which may
         //! vary depending on the table that they are in.
         //! @param [in] pds Private Data Specifier. Used to interpret private descriptors.
-        //! @param [in] cas CAS family of the table. If different from CAS_OTHER, override the CAS family in TablesDisplayArgs.
+        //! @param [in] cas CAS id of the table.
         //! @return A reference to the output stream.
         //!
         virtual std::ostream& displayDescriptorData(DID did,
@@ -153,7 +151,7 @@ namespace ts {
                                                     int indent = 0,
                                                     TID tid = TID_NULL,
                                                     PDS pds = 0,
-                                                    CASFamily cas = CAS_OTHER);
+                                                    uint16_t cas = CASID_NULL);
 
         //!
         //! Display a list of descriptors from a memory area
@@ -161,19 +159,19 @@ namespace ts {
         //! @param [in] data Address of the descriptor list.
         //! @param [in] size Size in bytes of the descriptor list.
         //! @param [in] indent Indentation width.
-        //! @param [in] cas CAS family of the table. If different from CAS_OTHER, override the CAS family in TablesDisplayArgs.
+        //! @param [in] cas CAS id of the table.
         //! @return A reference to the output stream.
         //!
-        virtual std::ostream& displayDescriptorList(const Section& section, const void* data, size_t size, int indent = 0, CASFamily cas = CAS_OTHER);
+        virtual std::ostream& displayDescriptorList(const Section& section, const void* data, size_t size, int indent = 0, uint16_t cas = CASID_NULL);
 
         //!
         //! Display a list of descriptors.
         //! @param [in] list Descriptor list.
         //! @param [in] indent Indentation width.
-        //! @param [in] cas CAS family of the table. If different from CAS_OTHER, override the CAS family in TablesDisplayArgs.
+        //! @param [in] cas CAS id of the table.
         //! @return A reference to the output stream.
         //!
-        virtual std::ostream& displayDescriptorList(const DescriptorList& list, int indent = 0, CASFamily cas = CAS_OTHER);
+        virtual std::ostream& displayDescriptorList(const DescriptorList& list, int indent = 0, uint16_t cas = CASID_NULL);
 
         //!
         //! A utility method to dump extraneous bytes after expected data.
@@ -184,7 +182,6 @@ namespace ts {
         //!
         virtual std::ostream& displayExtraData(const void *data, size_t size, int indent = 0);
 
-    protected:
         //!
         //! Display the content of an unknown section.
         //! The command-line formatting options are used to analyze the content.
@@ -192,6 +189,14 @@ namespace ts {
         //! @param [in] indent Indentation width.
         //!
         void displayUnkownSectionData(const ts::Section& section, int indent);
+
+        //!
+        //! Log the content of an unknown section.
+        //! @param [in] section The section to log.
+        //! @param [in] max_bytes Maximum number of bytes to log from the section. 0 means unlimited.
+        //! @return A one-line brief summary of the table.
+        //!
+        static UString LogUnknownSectionData(const Section& section, size_t max_bytes);
 
         //!
         //! Display the content of an unknown descriptor.
@@ -228,6 +233,10 @@ namespace ts {
                         const TLVSyntax& tlv);
 
     private:
-        const TablesDisplayArgs& _opt;
+        DuckContext&    _duck;            // Reference to the associated TSDuck context.
+        bool            _raw_dump;        // Raw dump of section, no interpretation.
+        uint32_t        _raw_flags;       // Dump flags in raw mode.
+        TLVSyntaxVector _tlv_syntax;      // TLV syntax to apply to unknown sections.
+        size_t          _min_nested_tlv;  // Minimum size of a TLV record after which it is interpreted as a nested TLV (0=disabled).
     };
 }

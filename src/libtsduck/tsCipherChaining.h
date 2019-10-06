@@ -57,15 +57,14 @@ namespace ts {
         virtual size_t minRounds() const override;
         virtual size_t maxRounds() const override;
         virtual size_t defaultRounds() const override;
-        virtual bool setKey(const void* key, size_t key_length, size_t rounds = 0) override;
 
         //!
         //! Set a new initialization vector.
-        //! @param [in] iv Address of IV.
+        //! @param [in] iv_data Address of IV.
         //! @param [in] iv_length IV length in bytes.
         //! @return True on success, false on error.
         //!
-        virtual bool setIV(const void* iv, size_t iv_length);
+        virtual bool setIV(const void* iv_data, size_t iv_length);
 
         //!
         //! Get the minimum IV sizes in bytes.
@@ -112,6 +111,9 @@ namespace ts {
                        size_t iv_min_blocks = 1,
                        size_t iv_max_blocks = 1,
                        size_t work_blocks = 1);
+
+        // Implementation of BlockCipher interface:
+        virtual bool setKeyImpl(const void* key, size_t key_length, size_t rounds) override;
     };
 
     //!

@@ -46,7 +46,7 @@ TSDUCK_SOURCE;
 
 TS_XML_DESCRIPTOR_FACTORY(ts::MessageDescriptor, MY_XML_NAME);
 TS_ID_DESCRIPTOR_FACTORY(ts::MessageDescriptor, ts::EDID::ExtensionDVB(MY_EDID));
-TS_ID_DESCRIPTOR_DISPLAY(ts::MessageDescriptor::DisplayDescriptor, ts::EDID::ExtensionDVB(MY_EDID));
+TS_FACTORY_REGISTER(ts::MessageDescriptor::DisplayDescriptor, ts::EDID::ExtensionDVB(MY_EDID));
 
 
 //----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ void ts::MessageDescriptor::serialize(DuckContext& duck, Descriptor& desc) const
     ByteBlockPtr bbp(serializeStart());
     bbp->appendUInt8(MY_EDID);
     bbp->appendUInt8(message_id);
-    if (!SerializeLanguageCode(duck, *bbp, language_code)) {
+    if (!SerializeLanguageCode(*bbp, language_code)) {
         desc.invalidate();
         return;
     }
@@ -110,7 +110,7 @@ void ts::MessageDescriptor::deserialize(DuckContext& duck, const Descriptor& des
     }
 
     message_id = data[1];
-    language_code = UString::FromDVB(data + 2, 3);
+    language_code = DeserializeLanguageCode(data + 2);
     message = duck.fromDVB(data + 5, size - 5);
 }
 
@@ -155,7 +155,7 @@ void ts::MessageDescriptor::DisplayDescriptor(TablesDisplay& display, DID did, c
         std::ostream& strm(display.duck().out());
         const std::string margin(indent, ' ');
         strm << margin << "Message id: " << int(data[0])
-             << ", language: " << UString::FromDVB(data + 1, 3) << std::endl
+             << ", language: " << DeserializeLanguageCode(data + 1) << std::endl
              << margin << "Message: \"" << display.duck().fromDVB(data + 4, size - 4) << "\"" << std::endl;
     }
     else {

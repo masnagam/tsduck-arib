@@ -41,7 +41,7 @@ TSDUCK_SOURCE;
 
 TS_XML_DESCRIPTOR_FACTORY(ts::LinkageDescriptor, MY_XML_NAME);
 TS_ID_DESCRIPTOR_FACTORY(ts::LinkageDescriptor, ts::EDID::Standard(MY_DID));
-TS_ID_DESCRIPTOR_DISPLAY(ts::LinkageDescriptor::DisplayDescriptor, ts::EDID::Standard(MY_DID));
+TS_FACTORY_REGISTER(ts::LinkageDescriptor::DisplayDescriptor, ts::EDID::Standard(MY_DID));
 
 
 //----------------------------------------------------------------------------
@@ -527,7 +527,7 @@ void ts::LinkageDescriptor::DisplayPrivateINT(TablesDisplay& display, const uint
         strm << margin << UString::Format(u"- Platform id: %s", {ts::names::PlatformId(plf_id, names::HEXA_FIRST)}) << std::endl;
 
         while (loop_length >= 4) {
-            const UString lang(UString::FromDVB(data, 3));
+            const UString lang(DeserializeLanguageCode(data));
             uint8_t name_length = data[3];
             data += 4; size -= 4;  data_length -= 4; loop_length -= 4;
             if (name_length > loop_length) {

@@ -57,7 +57,7 @@ ts::hls::InputPlugin::InputPlugin(TSP* tsp_) :
     _webArgs(),
     _playlist()
 {
-    _webArgs.defineOptions(*this);
+    _webArgs.defineArgs(*this);
 
     option(u"", 0, STRING, 1, 1);
     help(u"",
@@ -168,7 +168,7 @@ bool ts::hls::InputPlugin::isRealTime()
 bool ts::hls::InputPlugin::getOptions()
 {
     // Decode options.
-    _webArgs.loadArgs(*this);
+    _webArgs.loadArgs(duck, *this);
     getValue(_url, u"");
     const UString saveDirectory(value(u"save-files"));
     getIntValue(_maxSegmentCount, u"segment-count");

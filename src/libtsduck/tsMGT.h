@@ -78,7 +78,7 @@ namespace ts {
         // MGT public members:
         uint8_t        protocol_version;  //!< ATSC protocol version.
         TableTypeList  tables;            //!< List of table types which are described in this MGT.
-        DescriptorList descs;             //!< Program-level descriptor list.
+        DescriptorList descs;             //!< Main descriptor list.
 
         //!
         //! Default constructor.

@@ -42,7 +42,7 @@ TSDUCK_SOURCE;
 
 TS_XML_DESCRIPTOR_FACTORY(ts::CPIdentifierDescriptor, MY_XML_NAME);
 TS_ID_DESCRIPTOR_FACTORY(ts::CPIdentifierDescriptor, ts::EDID::ExtensionDVB(MY_EDID));
-TS_ID_DESCRIPTOR_DISPLAY(ts::CPIdentifierDescriptor::DisplayDescriptor, ts::EDID::ExtensionDVB(MY_EDID));
+TS_FACTORY_REGISTER(ts::CPIdentifierDescriptor::DisplayDescriptor, ts::EDID::ExtensionDVB(MY_EDID));
 
 
 //----------------------------------------------------------------------------
@@ -148,7 +148,7 @@ void ts::CPIdentifierDescriptor::DisplayDescriptor(TablesDisplay& display, DID d
     while (size >= 2) {
         const uint16_t id = GetUInt16(data);
         data += 2; size -= 2;
-        strm << margin << "CP System Id: " << DVBNameFromSection(u"CPSystemId", id, names::FIRST) << std::endl;
+        strm << margin << "CP System Id: " << NameFromSection(u"CPSystemId", id, names::FIRST) << std::endl;
     }
 
     display.displayExtraData(data, size, indent);

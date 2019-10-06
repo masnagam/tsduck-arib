@@ -36,7 +36,6 @@
 #include "tsUString.h"
 #include "tsByteBlock.h"
 #include "tsMPEG.h"
-#include "tsCASFamily.h"
 
 namespace ts {
 
@@ -57,7 +56,7 @@ namespace ts {
     //! - Report for log and error messages.
     //! - Text output stream.
     //! - Default DVB character sets (input and output).
-    //! - Default CAS family.
+    //! - Default CAS id.
     //! - Default Private Data Specifier (PDS) for DVB private descriptors.
     //! - Accumulated standards from the signalization (MPEG, DVB, ATSC, etc.)
     //! - Default region for UHF and VHF frequency layout.
@@ -275,17 +274,17 @@ namespace ts {
         void setDefaultDVBCharsetOut(const DVBCharset* charset);
 
         //!
-        //! Set the default CAS family to use.
-        //! @param [in] cas Default CAS family to be used when the CAS is unknown.
+        //! Set the default CAS id to use.
+        //! @param [in] cas Default CAS id to be used when the CAS is unknown.
         //!
-        void setDefaultCASFamily(CASFamily cas);
+        void setDefaultCASId(uint16_t cas);
 
         //!
-        //! The actual CAS family to use.
-        //! @param [in] cas Proposed CAS family. If equal to CAS_OTHER, then another value can be returned.
-        //! @return The actual CAS family to use.
+        //! The actual CAS id to use.
+        //! @param [in] cas Proposed CAS id. If equal to CASID_NULL, then another value can be returned.
+        //! @return The actual CAS id to use.
         //!
-        CASFamily casFamily(CASFamily cas = CAS_OTHER) const;
+        uint16_t casId(uint16_t cas = CASID_NULL) const;
 
         //!
         //! Set the default private data specifier to use in the absence of explicit private_data_specifier_descriptor.
@@ -348,7 +347,15 @@ namespace ts {
         //! The context keeps track of defined options so that loadOptions() can parse the appropriate options.
         //! @param [in,out] args Command line arguments to update.
         //!
-        void defineOptionsForDVBCharset(Args& args) { defineOptions(args, CMD_DVB_CHARSET); }
+        void defineArgsForDVBCharset(Args& args) { defineOptions(args, CMD_DVB_CHARSET); }
+
+        //!
+        //! Define default CAS command line options in an Args.
+        //! Defined options: @c -\-default-cas-id and other CAS-specific options.
+        //! The context keeps track of defined options so that loadOptions() can parse the appropriate options.
+        //! @param [in,out] args Command line arguments to update.
+        //!
+        void defineArgsForCAS(Args& args) { defineOptions(args, CMD_CAS); }
 
         //!
         //! Define Private Data Specifier command line options in an Args.
@@ -356,7 +363,7 @@ namespace ts {
         //! The context keeps track of defined options so that loadOptions() can parse the appropriate options.
         //! @param [in,out] args Command line arguments to update.
         //!
-        void defineOptionsForPDS(Args& args) { defineOptions(args, CMD_PDS); }
+        void defineArgsForPDS(Args& args) { defineOptions(args, CMD_PDS); }
 
         //!
         //! Define contextual standards command line options in an Args.
@@ -364,7 +371,7 @@ namespace ts {
         //! The context keeps track of defined options so that loadOptions() can parse the appropriate options.
         //! @param [in,out] args Command line arguments to update.
         //!
-        void defineOptionsForStandards(Args& args) { defineOptions(args, CMD_STANDARDS); }
+        void defineArgsForStandards(Args& args) { defineOptions(args, CMD_STANDARDS); }
 
         //!
         //! Define HF band command line options in an Args.
@@ -372,7 +379,7 @@ namespace ts {
         //! The context keeps track of defined options so that loadOptions() can parse the appropriate options.
         //! @param [in,out] args Command line arguments to update.
         //!
-        void defineOptionsForHFBand(Args& args) { defineOptions(args, CMD_HF_REGION); }
+        void defineArgsForHFBand(Args& args) { defineOptions(args, CMD_HF_REGION); }
 
         //!
         //! Load the values of all previously defined arguments from command line.
@@ -380,7 +387,7 @@ namespace ts {
         //! @param [in,out] args Command line arguments.
         //! @return True on success, false on error in argument line.
         //!
-        bool loadOptions(Args& args);
+        bool loadArgs(Args& args);
 
     private:
         Report*           _report;            // Pointer to a report for error messages. Never null.
@@ -388,12 +395,13 @@ namespace ts {
         std::ofstream     _outFile;           // Open stream when redirected to a file by name.
         const DVBCharset* _dvbCharsetIn;      // DVB character set to interpret strings without prefix code.
         const DVBCharset* _dvbCharsetOut;     // Preferred DVB character set to generate strings.
-        CASFamily         _casFamily;         // Preferred CAS family.
+        uint16_t          _casId;             // Preferred CAS id.
         PDS               _defaultPDS;        // Default PDS value if undefined.
         Standards         _cmdStandards;      // Forced standards from the command line.
         Standards         _accStandards;      // Accumulated list of standards in the context.
         UString           _hfDefaultRegion;   // Default region for UHF/VHF band. Empty until used for the first time.
         int               _definedCmdOptions; // Defined command line options.
+        std::map<uint16_t, const UChar*> _predefined_cas;  // Predefined CAS names, index by CAS id (first in range).
 
         // List of command line options to define and analyze.
         enum CmdOptions {
@@ -401,6 +409,7 @@ namespace ts {
             CMD_HF_REGION   = 0x0002,
             CMD_STANDARDS   = 0x0004,
             CMD_PDS         = 0x0008,
+            CMD_CAS         = 0x0010,
         };
 
         // Define several classes of command line options in an Args.

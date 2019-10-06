@@ -28,6 +28,7 @@
 //----------------------------------------------------------------------------
 
 #include "tsECMGClientArgs.h"
+#include "tsArgs.h"
 TSDUCK_SOURCE;
 
 
@@ -54,7 +55,7 @@ ts::ECMGClientArgs::ECMGClientArgs() :
 // Define command line options in an Args.
 //----------------------------------------------------------------------------
 
-void ts::ECMGClientArgs::defineOptions(Args& args) const
+void ts::ECMGClientArgs::defineArgs(Args& args) const
 {
     args.option(u"access-criteria", 'a', Args::STRING);
     args.help(u"access-criteria",
@@ -104,7 +105,7 @@ void ts::ECMGClientArgs::defineOptions(Args& args) const
 // Args error indicator is set in case of incorrect arguments
 //----------------------------------------------------------------------------
 
-bool ts::ECMGClientArgs::loadArgs(Args& args)
+bool ts::ECMGClientArgs::loadArgs(DuckContext& duck, Args& args)
 {
     super_cas_id = args.intValue<uint32_t>(u"super-cas-id");
     ecm_channel_id = args.intValue<uint16_t>(u"channel-id", 1);

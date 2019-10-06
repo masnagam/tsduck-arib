@@ -42,7 +42,7 @@ TSDUCK_SOURCE;
 
 TS_XML_TABSPEC_DESCRIPTOR_FACTORY(ts::ApplicationIconsDescriptor, MY_XML_NAME, MY_TID);
 TS_ID_DESCRIPTOR_FACTORY(ts::ApplicationIconsDescriptor, ts::EDID::TableSpecific(MY_DID, MY_TID));
-TS_ID_DESCRIPTOR_DISPLAY(ts::ApplicationIconsDescriptor::DisplayDescriptor, ts::EDID::TableSpecific(MY_DID, MY_TID));
+TS_FACTORY_REGISTER(ts::ApplicationIconsDescriptor::DisplayDescriptor, ts::EDID::TableSpecific(MY_DID, MY_TID));
 
 
 //----------------------------------------------------------------------------
@@ -123,7 +123,7 @@ void ts::ApplicationIconsDescriptor::DisplayDescriptor(TablesDisplay& display, D
             strm << margin << UString::Format(u"Icon flags: 0x%X", {flags}) << std::endl;
             for (uint16_t mask = 0x0001; mask != 0; mask <<= 1) {
                 if ((flags & mask) != 0) {
-                    strm << margin << "  - " << DVBNameFromSection(u"ApplicationIconFlags", mask) << std::endl;
+                    strm << margin << "  - " << NameFromSection(u"ApplicationIconFlags", mask) << std::endl;
                 }
             }
             if (size > 2) {

@@ -41,7 +41,7 @@ TSDUCK_SOURCE;
 
 TS_XML_DESCRIPTOR_FACTORY(ts::DataStreamAlignmentDescriptor, MY_XML_NAME);
 TS_ID_DESCRIPTOR_FACTORY(ts::DataStreamAlignmentDescriptor, ts::EDID::Standard(MY_DID));
-TS_ID_DESCRIPTOR_DISPLAY(ts::DataStreamAlignmentDescriptor::DisplayDescriptor, ts::EDID::Standard(MY_DID));
+TS_FACTORY_REGISTER(ts::DataStreamAlignmentDescriptor::DisplayDescriptor, ts::EDID::Standard(MY_DID));
 
 
 //----------------------------------------------------------------------------
@@ -101,7 +101,7 @@ void ts::DataStreamAlignmentDescriptor::DisplayDescriptor(TablesDisplay& display
     const std::string margin(indent, ' ');
 
     if (size >= 1) {
-        strm << margin << "Alignment type: " << DVBNameFromSection(u"DataStreamAlignment", data[0], names::BOTH_FIRST) << std::endl;
+        strm << margin << "Alignment type: " << NameFromSection(u"DataStreamAlignment", data[0], names::BOTH_FIRST) << std::endl;
         data++; size--;
     }
 
