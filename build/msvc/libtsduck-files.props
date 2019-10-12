@@ -46,6 +46,7 @@
     <ClInclude Include="..\..\src\libtsduck\tsArgsTemplate.h" />
     <ClInclude Include="..\..\src\libtsduck\tsArgsWithPlugins.h" />
     <ClInclude Include="..\..\src\libtsduck\tsARIBAudioComponentDescriptor.h" />
+    <ClInclude Include="..\..\src\libtsduck\tsARIBLogoTransmissionDescriptor.h" />
     <ClInclude Include="..\..\src\libtsduck\tsARIBSeriesDescriptor.h" />
     <ClInclude Include="..\..\src\libtsduck\tsARIBTSInformationDescriptor.h" />
     <ClInclude Include="..\..\src\libtsduck\tsAssociationTagDescriptor.h" />
@@ -590,6 +591,7 @@
     <ClCompile Include="..\..\src\libtsduck\tsArgsSupplierInterface.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsArgsWithPlugins.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsARIBAudioComponentDescriptor.cpp" />
+    <ClCompile Include="..\..\src\libtsduck\tsARIBLogoTransmissionDescriptor.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsARIBSeriesDescriptor.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsARIBTSInformationDescriptor.cpp" />
     <ClCompile Include="..\..\src\libtsduck\tsAssociationTagDescriptor.cpp" />

@@ -37,6 +37,7 @@
     REF_TYPE(ApplicationStorageDescriptor);
     REF_TYPE(ApplicationUsageDescriptor);
     REF_TYPE(ARIBAudioComponentDescriptor);
+    REF_TYPE(ARIBLogoTransmissionDescriptor);
     REF_TYPE(ARIBSeriesDescriptor);
     REF_TYPE(ARIBTSInformationDescriptor);
     REF_TYPE(AssociationTagDescriptor);

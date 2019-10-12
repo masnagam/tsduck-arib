@@ -71,6 +71,7 @@
 #include "tsApplicationStorageDescriptor.h"
 #include "tsApplicationUsageDescriptor.h"
 #include "tsARIBAudioComponentDescriptor.h"
+#include "tsARIBLogoTransmissionDescriptor.h"
 #include "tsARIBSeriesDescriptor.h"
 #include "tsARIBTSInformationDescriptor.h"
 #include "tsAssociationTagDescriptor.h"

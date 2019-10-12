@@ -44,6 +44,7 @@ HEADERS += \
     ../../../src/libtsduck/tsArgsTemplate.h \
     ../../../src/libtsduck/tsArgsWithPlugins.h \
     ../../../src/libtsduck/tsARIBAudioComponentDescriptor.h \
+    ../../../src/libtsduck/tsARIBLogoTransmissionDescriptor.h \
     ../../../src/libtsduck/tsARIBSeriesDescriptor.h \
     ../../../src/libtsduck/tsARIBTSInformationDescriptor.h \
     ../../../src/libtsduck/tsAssociationTagDescriptor.h \
@@ -578,6 +579,7 @@ SOURCES += \
     ../../../src/libtsduck/tsArgsSupplierInterface.cpp \
     ../../../src/libtsduck/tsArgsWithPlugins.cpp \
     ../../../src/libtsduck/tsARIBAudioComponentDescriptor.cpp \
+    ../../../src/libtsduck/tsARIBLogoTransmissionDescriptor.cpp \
     ../../../src/libtsduck/tsARIBSeriesDescriptor.cpp \
     ../../../src/libtsduck/tsARIBTSInformationDescriptor.cpp \
     ../../../src/libtsduck/tsAssociationTagDescriptor.cpp \

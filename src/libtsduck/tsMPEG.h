@@ -1309,7 +1309,7 @@ namespace ts {
         // DID_ARIB_CA_SERVICE                    = 0xCC, //!< DID for ARIB CA service descriptor
         DID_ARIB_TS_INFORMATION                = 0xCD, //!< DID for ARIB TS information descriptor
         // DID_ARIB_EXTENDED_BROADCASTER          = 0xCE, //!< DID for ARIB Extended broadcaster descriptor
-        // DID_ARIB_LOGO_TRANSMISSION             = 0xCF, //!< DID for ARIB Logo transmission descriptor
+        DID_ARIB_LOGO_TRANSMISSION             = 0xCF, //!< DID for ARIB Logo transmission descriptor
         // DID_ARIB_BASIC_LOCAL_EVENT             = 0xD0, //!< DID for ARIB Basic local event descriptor
         // DID_ARIB_REFERENCE                     = 0xD1, //!< DID for ARIB Reference descriptor
         // DID_ARIB_NODE_RELATION                 = 0xD2, //!< DID for ARIB Node relation descriptor

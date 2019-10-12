@@ -136,6 +136,9 @@
     <ClInclude Include="..\..\src\libtsduck\tsARIBAudioComponentDescriptor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\libtsduck\tsARIBLogoTransmissionDescriptor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\libtsduck\tsARIBSeriesDescriptor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1762,6 +1765,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\libtsduck\tsARIBAudioComponentDescriptor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libtsduck\tsARIBLogoTransmissionDescriptor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\libtsduck\tsARIBSeriesDescriptor.cpp">
