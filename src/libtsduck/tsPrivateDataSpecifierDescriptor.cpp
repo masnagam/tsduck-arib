@@ -68,13 +68,9 @@ ts::PrivateDataSpecifierDescriptor::PrivateDataSpecifierDescriptor(DuckContext& 
 
 void ts::PrivateDataSpecifierDescriptor::serialize(DuckContext& duck, Descriptor& desc) const
 {
-    uint8_t data[6];
-    data[0] = _tag;
-    data[1] = 4;
-    PutUInt32 (data + 2, pds);
-
-    Descriptor d (data, sizeof(data));
-    desc = d;
+    ByteBlockPtr bbp(serializeStart());
+    bbp->appendUInt32(pds);
+    serializeEnd(desc, bbp);
 }
 
 
@@ -112,24 +108,12 @@ void ts::PrivateDataSpecifierDescriptor::DisplayDescriptor(TablesDisplay& displa
 
 
 //----------------------------------------------------------------------------
-// Known PDS names in XML files.
-//----------------------------------------------------------------------------
-
-namespace {
-    const ts::Enumeration KnownPDS({
-        {u"eacem",    ts::PDS_EACEM},
-        {u"eutelsat", ts::PDS_EUTELSAT},
-    });
-}
-
-
-//----------------------------------------------------------------------------
 // XML serialization
 //----------------------------------------------------------------------------
 
 void ts::PrivateDataSpecifierDescriptor::buildXML(DuckContext& duck, xml::Element* root) const
 {
-    root->setIntEnumAttribute(KnownPDS, u"private_data_specifier", pds);
+    root->setIntEnumAttribute(PrivateDataSpecifierEnum, u"private_data_specifier", pds);
 }
 
 
@@ -141,5 +125,5 @@ void ts::PrivateDataSpecifierDescriptor::fromXML(DuckContext& duck, const xml::E
 {
     _is_valid =
         checkXMLName(element) &&
-        element->getIntEnumAttribute(pds, KnownPDS, u"private_data_specifier", true);
+        element->getIntEnumAttribute(pds, PrivateDataSpecifierEnum, u"private_data_specifier", true);
 }

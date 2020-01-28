@@ -34,8 +34,9 @@
 //----------------------------------------------------------------------------
 
 #pragma once
-#include "tsPlatform.h"
+#include "tsDeliverySystem.h"
 #include "tsEnumeration.h"
+#include "tsVariable.h"
 #include "tsReport.h"
 
 namespace ts {
@@ -68,66 +69,25 @@ namespace ts {
     TSDUCKDLL bool CheckModEnum(int value, const UString& name, const Enumeration& conv, Report& report);
 
     //!
-    //! Known tuner types.
+    //! Check if an optional enumeration value is supported by the native implementation.
     //!
-    //! "Second generation" tuners are included in their base category:
-    //! DVB_S includes DVB-S and DVB-S2, DVB_T includes DVB-T and DVB-T2, etc.
+    //! @param [in] value A variable object containing an enumeration value from on the
+    //! enumeration types in file @link tsModulation.h @endlink.
+    //! @param [in] name The name of the feature or enumeration type (eg.
+    //! "FEC", "guard interval", etc.) Used to report errors.
+    //! @param [in] conv The ts::Enumeration instance for the enumeration type.
+    //! Used to report errors.
+    //! @param [in] report Where to report errors.
+    //! @return True if either @a value is not set or its value is supported on the operating system.
+    //! False if the value is set and the feature is not supported. In this case, an error message is reported
+    //! to @a report.
+    //! @see CheckModEnum()
     //!
-    enum TunerType {
-#if defined(TS_LINUX) && !defined(DOXYGEN)
-        DVB_S  = ::FE_QPSK,
-        DVB_C  = ::FE_QAM,
-        DVB_T  = ::FE_OFDM,
-        ATSC   = ::FE_ATSC,
-#else
-        DVB_S,   //!< DVB-S, DVB-S2
-        DVB_C,   //!< DVB-C, DVB-C2
-        DVB_T,   //!< DVB-T, DVB-T2
-        ATSC,    //!< ATSC
-#endif
-    };
-
-    //!
-    //! Enumeration description of ts::TunerType.
-    //!
-    TSDUCKDLL extern const Enumeration TunerTypeEnum;
-
-    //!
-    //! Delivery systems.
-    //!
-    enum DeliverySystem {
-        DS_UNDEFINED,      //!< Undefined.
-        DS_DVB_S,          //!< DVB-S.
-        DS_DVB_S2,         //!< DVB-S2.
-        DS_DVB_T,          //!< DVB-T.
-        DS_DVB_T2,         //!< DVB-T2.
-        DS_DVB_C,          //!< DVB-C.
-        DS_DVB_C_ANNEX_AC, //!< DVB-C Annex A,C.
-        DS_DVB_C_ANNEX_B,  //!< DVB-C Annex B.
-        DS_DVB_C2,         //!< DVB-C2.
-        DS_DVB_H,          //!< DVB-H.
-        DS_ISDB_S,         //!< ISDB-S.
-        DS_ISDB_T,         //!< ISDB-T.
-        DS_ISDB_C,         //!< ISDB-C.
-        DS_ATSC,           //!< ATSC.
-        DS_ATSC_MH,        //!< ATSC-MH.
-        DS_DMB_TH,         //!< DMB-TH.
-        DS_CMMB,           //!< CMMB.
-        DS_DAB,            //!< DAB.
-        DS_DSS,            //!< DSS.
-        DS_COUNT           //!< Fake value, must be last to get the number of values.
-    };
-
-    //!
-    //! Enumeration description of ts::DeliverySystem.
-    //!
-    TSDUCKDLL extern const Enumeration DeliverySystemEnum;
-
-    //!
-    //! A set of delivery system values (ts::DeliverySystem).
-    //! Typically used to indicate the list of standards which are supported by a tuner.
-    //!
-    typedef std::bitset<size_t(DS_COUNT)> DeliverySystemSet;
+    template <typename ENUM, typename std::enable_if<std::is_integral<ENUM>::value || std::is_enum<ENUM>::value>::type* = nullptr>
+    bool CheckModVar(const Variable<ENUM>& value,const UString& name, const Enumeration& conv, Report& report)
+    {
+        return !value.set() || CheckModEnum(int(value.value()), name, conv, report);
+    }
 
     //!
     //! Modulation types.
@@ -147,6 +107,8 @@ namespace ts {
         VSB_16   = ::VSB_16,
         APSK_16  = ::APSK_16,
         APSK_32  = ::APSK_32,
+        DQPSK    = ::DQPSK,
+        QAM_4_NR = ::QAM_4_NR,
 #elif defined(TS_WINDOWS) && !defined(DOXYGEN)
         QPSK     = ::BDA_MOD_QPSK,
         PSK_8    = ::BDA_MOD_8PSK,
@@ -160,19 +122,23 @@ namespace ts {
         VSB_16   = ::BDA_MOD_16VSB,
         APSK_16  = ::BDA_MOD_16APSK,
         APSK_32  = ::BDA_MOD_32APSK,
+        DQPSK    = -10,
+        QAM_4_NR = -11,
 #else
         QPSK,       //!< QPSK (4-PSK, DVB-S).
         PSK_8,      //!< 8-PSK (DVB-S2).
         QAM_AUTO,   //!< Unspecified QAM.
-        QAM_16,     //!< QAM-16.
-        QAM_32,     //!< QAM-32.
-        QAM_64,     //!< QAM-64.
-        QAM_128,    //!< QAM-128.
-        QAM_256,    //!< QAM-256.
-        VSB_8,      //!< VSB-8.
-        VSB_16,     //!< VSB-16.
+        QAM_16,     //!< 16-QAM.
+        QAM_32,     //!< 32-QAM.
+        QAM_64,     //!< 64-QAM.
+        QAM_128,    //!< 128-QAM.
+        QAM_256,    //!< 256-QAM.
+        VSB_8,      //!< 8-VSB.
+        VSB_16,     //!< 16-VSB.
         APSK_16,    //!< 16-APSK (DVB-S2).
         APSK_32,    //!< 32-APSK (DVB-S2).
+        DQPSK,      //!< DQPSK,
+        QAM_4_NR,   //!< 4-QAM-NR,
 #endif
     };
 
@@ -231,7 +197,7 @@ namespace ts {
         FEC_3_5  = ::FEC_3_5,
         FEC_1_3  = -12,
         FEC_1_4  = -13,
-        FEC_2_5  = -14,
+        FEC_2_5  = ::FEC_2_5,
         FEC_5_11 = -15,
 #elif defined(TS_WINDOWS) && !defined(DOXYGEN)
         FEC_NONE = ::BDA_BCC_RATE_NOT_SET,
@@ -421,25 +387,29 @@ namespace ts {
     //!
     enum TransmissionMode {
 #if defined(TS_LINUX) && !defined(DOXYGEN)
-        TM_AUTO = ::TRANSMISSION_MODE_AUTO,
-        TM_2K   = ::TRANSMISSION_MODE_2K,
-        TM_4K   = ::TRANSMISSION_MODE_4K,
-        TM_8K   = ::TRANSMISSION_MODE_8K,
-        TM_2KI  = -10,
-        TM_4KI  = -11,
-        TM_1K   = ::TRANSMISSION_MODE_1K,
-        TM_16K  = ::TRANSMISSION_MODE_16K,
-        TM_32K  = ::TRANSMISSION_MODE_32K,
+        TM_AUTO  = ::TRANSMISSION_MODE_AUTO,
+        TM_2K    = ::TRANSMISSION_MODE_2K,
+        TM_4K    = ::TRANSMISSION_MODE_4K,
+        TM_8K    = ::TRANSMISSION_MODE_8K,
+        TM_2KI   = -10,
+        TM_4KI   = -11,
+        TM_1K    = ::TRANSMISSION_MODE_1K,
+        TM_16K   = ::TRANSMISSION_MODE_16K,
+        TM_32K   = ::TRANSMISSION_MODE_32K,
+        TM_C1    = ::TRANSMISSION_MODE_C1,
+        TM_C3780 = ::TRANSMISSION_MODE_C3780,
 #elif defined(TS_WINDOWS) && !defined(DOXYGEN)
-        TM_AUTO = ::BDA_XMIT_MODE_NOT_DEFINED,
-        TM_2K   = ::BDA_XMIT_MODE_2K,
-        TM_4K   = ::BDA_XMIT_MODE_4K,
-        TM_8K   = ::BDA_XMIT_MODE_8K,
-        TM_2KI  = ::BDA_XMIT_MODE_2K_INTERLEAVED,
-        TM_4KI  = ::BDA_XMIT_MODE_4K_INTERLEAVED,
-        TM_1K   = ::BDA_XMIT_MODE_1K,
-        TM_16K  = ::BDA_XMIT_MODE_16K,
-        TM_32K  = ::BDA_XMIT_MODE_32K,
+        TM_AUTO  = ::BDA_XMIT_MODE_NOT_DEFINED,
+        TM_2K    = ::BDA_XMIT_MODE_2K,
+        TM_4K    = ::BDA_XMIT_MODE_4K,
+        TM_8K    = ::BDA_XMIT_MODE_8K,
+        TM_2KI   = ::BDA_XMIT_MODE_2K_INTERLEAVED,
+        TM_4KI   = ::BDA_XMIT_MODE_4K_INTERLEAVED,
+        TM_1K    = ::BDA_XMIT_MODE_1K,
+        TM_16K   = ::BDA_XMIT_MODE_16K,
+        TM_32K   = ::BDA_XMIT_MODE_32K,
+        TM_C1    = -10,
+        TM_C3780 = -11,
 #else
         TM_AUTO,  //!< Transmission mode automatically set.
         TM_2K,    //!< 2K transmission mode.
@@ -450,6 +420,8 @@ namespace ts {
         TM_1K,    //!< 1K transmission mode, DVB-T2 (use 1K FFT).
         TM_16K,   //!< 16K transmission mode, DVB-T2 (use 16K FFT).
         TM_32K,   //!< 32K transmission mode, DVB-T2 (use 32K FFT).
+        TM_C1,    //!< Single Carrier (C=1) transmission mode (DTMB only).
+        TM_C3780, //!< Multi Carrier (C=3780) transmission mode (DTMB only).
 #endif
     };
 
@@ -471,6 +443,9 @@ namespace ts {
         GUARD_1_128  = ::GUARD_INTERVAL_1_128,
         GUARD_19_128 = ::GUARD_INTERVAL_19_128,
         GUARD_19_256 = ::GUARD_INTERVAL_19_256,
+        GUARD_PN420  = ::GUARD_INTERVAL_PN420,
+        GUARD_PN595  = ::GUARD_INTERVAL_PN595,
+        GUARD_PN945  = ::GUARD_INTERVAL_PN945,
 #elif defined(TS_WINDOWS) && !defined(DOXYGEN)
         GUARD_AUTO   = ::BDA_GUARD_NOT_DEFINED,
         GUARD_1_32   = ::BDA_GUARD_1_32,
@@ -480,6 +455,9 @@ namespace ts {
         GUARD_1_128  = ::BDA_GUARD_1_128,
         GUARD_19_128 = ::BDA_GUARD_19_128,
         GUARD_19_256 = ::BDA_GUARD_19_256,
+        GUARD_PN420  = -10,
+        GUARD_PN595  = -11,
+        GUARD_PN945  = -12,
 #else
         GUARD_AUTO,    //!< Guard interval automatically set.
         GUARD_1_32,    //!< Guard interval 1/32.
@@ -489,6 +467,9 @@ namespace ts {
         GUARD_1_128,   //!< Guard interval 1/128 (DVB-T2).
         GUARD_19_128,  //!< Guard interval 19/128 (DVB-T2).
         GUARD_19_256,  //!< Guard interval 19/256 (DVB-T2).
+        GUARD_PN420,   //!< PN length 420 (1/4).
+        GUARD_PN595,   //!< PN length 595 (1/6).
+        GUARD_PN945,   //!< PN length 945 (1/9).
 #endif
     };
 

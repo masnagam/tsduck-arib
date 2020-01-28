@@ -124,6 +124,8 @@
     REF_TYPE(MultilingualServiceNameDescriptor);
     REF_TYPE(MultiplexBufferUtilizationDescriptor);
     REF_TYPE(NetworkNameDescriptor);
+    REF_TYPE(NorDigLogicalChannelDescriptorV1);
+    REF_TYPE(NorDigLogicalChannelDescriptorV2);
     REF_TYPE(NPTEndpointDescriptor);
     REF_TYPE(NPTReferenceDescriptor);
     REF_TYPE(NVODReferenceDescriptor);
@@ -148,6 +150,7 @@
     REF_TYPE(ShortEventDescriptor);
     REF_TYPE(SimpleApplicationBoundaryDescriptor);
     REF_TYPE(SimpleApplicationLocationDescriptor);
+    REF_TYPE(SkyLogicalChannelNumberDescriptor);
     REF_TYPE(SLDescriptor);
     REF_TYPE(SmoothingBufferDescriptor);
     REF_TYPE(SpliceAvailDescriptor);

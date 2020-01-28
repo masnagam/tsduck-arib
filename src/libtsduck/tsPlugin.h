@@ -106,7 +106,7 @@ namespace ts {
         //! @c int data named @c tspInterfaceVersion which contains the current
         //! interface version at the time the library is built.
         //!
-        static const int API_VERSION = 12;
+        static const int API_VERSION = 13;
 
         //!
         //! Get the current input bitrate in bits/seconds.
@@ -378,6 +378,16 @@ namespace ts {
         //! 1 to @a max_packets). Returning zero means error or end of input.
         //!
         virtual size_t receive(TSPacket* buffer, TSPacketMetadata* pkt_data, size_t max_packets) = 0;
+
+        //!
+        //! Set a receive timeout for all input operations.
+        //!
+        //! This method is typically invoked from tsp before starting the plugin.
+        //!
+        //! @param [in] timeout Receive timeout in milliseconds. No timeout if zero or negative.
+        //! @return True when the timeout is accepted, false if not supported by the plugin.
+        //!
+        virtual bool setReceiveTimeout(MilliSecond timeout);
 
         //!
         //! Abort the input operation currently in progress.

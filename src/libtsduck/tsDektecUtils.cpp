@@ -121,6 +121,11 @@ const ts::Enumeration ts::DektecDVBTProperty({
 #endif
 });
 
+const ts::Enumeration ts::DektecPowerMode({
+    {u"high-quality", DTAPI_IOCONFIG_MODHQ},
+    {u"low-power", DTAPI_IOCONFIG_LOWPWR},
+});
+
 
 //-----------------------------------------------------------------------------
 // Check if this version of TSDuck was build with Dektec support.

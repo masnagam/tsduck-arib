@@ -28,7 +28,7 @@
 //----------------------------------------------------------------------------
 //
 //  Transport stream processor shared library:
-//  DVB device input (DVB-S, DVB-C, DVB-T)
+//  Tuner device input (was DVB only initially, any tuner now)
 //
 //----------------------------------------------------------------------------
 
@@ -36,7 +36,7 @@
 #include "tsPluginRepository.h"
 #include "tsTuner.h"
 #include "tsTunerArgs.h"
-#include "tsTunerParameters.h"
+#include "tsModulationArgs.h"
 #include "tsSysUtils.h"
 TSDUCK_SOURCE;
 
@@ -58,15 +58,15 @@ namespace ts {
         virtual bool isRealTime() override {return true;}
         virtual BitRate getBitrate() override;
         virtual size_t receive(TSPacket*, TSPacketMetadata*, size_t) override;
+        virtual bool setReceiveTimeout(MilliSecond timeout) override;
 
         // Larger stack size than default
         virtual size_t stackUsage() const override {return 512 * 1024;} // 512 kB
 
     private:
-        Tuner              _tuner;            // DVB tuner device
-        TunerArgs          _tuner_args;       // Command-line tuning arguments
-        TunerParametersPtr _tuner_params;     // Tuning parameters
-        BitRate            _previous_bitrate; // Previous value from getBitrate()
+        Tuner     _tuner;            // DVB tuner device
+        TunerArgs _tuner_args;       // Command-line tuning arguments
+        BitRate   _previous_bitrate; // Previous value from getBitrate()
     };
 }
 
@@ -80,9 +80,8 @@ TSPLUGIN_DECLARE_INPUT(dvb, ts::DVBInput)
 
 ts::DVBInput::DVBInput(TSP* tsp_) :
     InputPlugin(tsp_, u"DVB receiver device input", u"[options]"),
-    _tuner(),
+    _tuner(duck),
     _tuner_args(false, true),
-    _tuner_params(),
     _previous_bitrate(0)
 {
     // Define common tuning options
@@ -105,6 +104,19 @@ bool ts::DVBInput::getOptions()
 
 
 //----------------------------------------------------------------------------
+// Set receive timeout from tsp.
+//----------------------------------------------------------------------------
+
+bool ts::DVBInput::setReceiveTimeout(MilliSecond timeout)
+{
+    if (timeout > 0) {
+        _tuner_args.receive_timeout = timeout;
+    }
+    return true;
+}
+
+
+//----------------------------------------------------------------------------
 // Start method
 //----------------------------------------------------------------------------
 
@@ -119,21 +131,20 @@ bool ts::DVBInput::start()
     _previous_bitrate = 0;
 
     // Open DVB tuner
-    if (!_tuner_args.configureTuner(_tuner, *tsp)) {
+    if (!_tuner_args.configureTuner(_tuner, *tsp) || !_tuner_args.resolveChannel(_tuner.deliverySystems(), *tsp)) {
         return false;
     }
-    tsp->verbose(u"using %s (%s)", {_tuner.deviceName(), TunerTypeEnum.name(_tuner.tunerType())});
+    tsp->verbose(u"using %s (%s)", {_tuner.deviceName(), _tuner.deliverySystems().toString()});
 
     // Tune to the specified frequency.
-    if (!_tuner_args.tune(_tuner, _tuner_params, *tsp)) {
+    if (!_tuner.tune(_tuner_args, *tsp)) {
         stop();
         return false;
     }
-    tsp->verbose(u"tuned to transponder %s", {_tuner_params->toPluginOptions()});
+    tsp->verbose(u"tuned to transponder %s", {_tuner_args.toPluginOptions()});
 
     // Compute theoretical TS bitrate from tuning parameters.
-    assert(!_tuner_params.isNull());
-    const BitRate bitrate = _tuner_params->theoreticalBitrate();
+    const BitRate bitrate = _tuner_args.theoreticalBitrate();
     if (bitrate > 0) {
         tsp->verbose(u"expected bitrate from tuning parameters: %'d b/s", {bitrate});
     }
@@ -184,22 +195,20 @@ ts::BitRate ts::DVBInput::getBitrate()
     // number of used bits vs. transported bits (FEC), etc.
 
     // Get current tuning information
-    if (!_tuner.getCurrentTuning(*_tuner_params, false, *tsp)) {
+    if (!_tuner.getCurrentTuning(_tuner_args, false, *tsp)) {
         return 0; // error
     }
 
     // Let the TunerParameters subclass compute the bitrate
-    BitRate bitrate = _tuner_params->theoreticalBitrate();
+    BitRate bitrate = _tuner_args.theoreticalBitrate();
 
     // When bitrate changes, the modulation parameters have changed
     if (bitrate != _previous_bitrate) {
         // Store the new parameters in a global repository (may be used by other plugins)
-        TunerParametersPtr new_params(TunerParameters::Factory(_tuner_params->tunerType()));
-        new_params->copy(*_tuner_params);
-        Object::StoreInRepository(u"tsp.dvb.params", new_params.upcast<Object>());
+        Object::StoreInRepository(u"tsp.dvb.params", ObjectPtr(new ModulationArgs(_tuner_args)));
 
         // Display new tuning info
-        tsp->verbose(u"actual tuning options: %s", {_tuner_params->toPluginOptions()});
+        tsp->verbose(u"actual tuning options: %s", {_tuner_args.toPluginOptions()});
     }
 
     return _previous_bitrate = bitrate;

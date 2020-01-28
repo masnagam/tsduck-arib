@@ -50,10 +50,12 @@ const ts::PIDSet ts::AllPIDs (~NoPID);
 //----------------------------------------------------------------------------
 
 const ts::Enumeration ts::PrivateDataSpecifierEnum({
+    {u"BskyB",     ts::PDS_BSKYB},
     {u"Nagra",     ts::PDS_NAGRA},
     {u"TPS",       ts::PDS_TPS},
     {u"EACEM",     ts::PDS_EACEM},
     {u"EICTA",     ts::PDS_EICTA},  // same value as EACEM
+    {u"NorDig",    ts::PDS_NORDIG},
     {u"Logiways",  ts::PDS_LOGIWAYS},
     {u"CanalPlus", ts::PDS_CANALPLUS},
     {u"Eutelsat",  ts::PDS_EUTELSAT},
@@ -174,8 +176,8 @@ uint64_t ts::NextPCR(uint64_t last_pcr, PacketCounter distance, BitRate bitrate)
     }
 
     uint64_t next_pcr = last_pcr + (distance * 8 * PKT_SIZE * SYSTEM_CLOCK_FREQ) / uint64_t(bitrate);
-    if (next_pcr > MAX_PCR) {
-        next_pcr -= MAX_PCR;
+    if (next_pcr >= PCR_SCALE) {
+        next_pcr -= PCR_SCALE;
     }
 
     return next_pcr;
@@ -188,20 +190,20 @@ uint64_t ts::NextPCR(uint64_t last_pcr, PacketCounter distance, BitRate bitrate)
 
 uint64_t ts::DiffPCR(uint64_t pcr1, uint64_t pcr2)
 {
-    if ((pcr1 == INVALID_PCR) || (pcr2 == INVALID_PCR)) {
+    if (pcr1 > MAX_PCR || pcr2 > MAX_PCR) {
         return INVALID_PCR;
     }
     else {
-        return WrapUpPCR(pcr1, pcr2) ? (pcr2 + MAX_PCR) - pcr1 : pcr2 - pcr1;
+        return pcr2 >= pcr1 ? pcr2 - pcr1 : PCR_SCALE + pcr2 - pcr1;
     }
 }
 
 uint64_t ts::DiffPTS(uint64_t pts1, uint64_t pts2)
 {
-    if ((pts1 == INVALID_PCR) || (pts2 == INVALID_PCR)) {
+    if (pts1 > MAX_PTS_DTS || pts2 > MAX_PTS_DTS) {
         return INVALID_PTS;
     }
     else {
-        return WrapUpPTS(pts1, pts2) ? (pts2 + MAX_PTS_DTS) - pts1 : pts2 - pts1;
+        return pts2 >= pts1 ? pts2 - pts1 : PTS_DTS_SCALE + pts2 - pts1;
     }
 }

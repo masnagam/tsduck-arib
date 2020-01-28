@@ -92,6 +92,19 @@ ts::Variable<T>& ts::Variable<T>::operator=(const T& obj)
     return *this;
 }
 
+template <typename T>
+bool ts::Variable<T>::setDefault(const T& def)
+{
+    if (_access != nullptr) {
+        // Variable is already set.
+        return false;
+    }
+    else {
+        _access = new(_data) T(def);
+        return true;
+    }
+}
+
 
 //----------------------------------------------------------------------------
 // Reset the value.
@@ -118,9 +131,9 @@ const T& ts::Variable<T>::value() const
 {
     if (_access != nullptr) {
         return *_access;
-            }
+    }
     else {
-                throw UninitializedVariable(u"uninitialized variable");
+        throw UninitializedVariable(u"uninitialized variable");
     }
 }
 

@@ -60,7 +60,7 @@ public:
 #endif
 
     ts::DuckContext duck;
-    ts::TunerArgs   tuner;  // Name of device to list (unspecified means all).
+    ts::TunerArgs   tuner_args;  // Name of device to list (unspecified means all).
 };
 
 // Destructor.
@@ -73,12 +73,18 @@ Options::Options(int argc, char *argv[]) :
     test_type(ts::DirectShowTest::NONE),
 #endif
     duck(this),
-    tuner(true, true)
+    tuner_args(true, true)
 {
+    // Common tuner options.
+    tuner_args.defineArgs(*this);
+
 #if defined(TS_WINDOWS)
 
     option(u"enumerate-devices", 'e');
     help(u"enumerate-devices", u"Legacy option, equivalent to --test enumerate-devices.");
+
+    option(u"list-devices", 'l');
+    help(u"list-devices", u"Get a list of all tuner and receiver devices, equivalent to --test list-devices.");
 
     option(u"test", 't', ts::DirectShowTest::TestNames);
     help(u"test", u"name",
@@ -87,16 +93,21 @@ Options::Options(int argc, char *argv[]) :
 
 #endif
 
-    // Add common tuner options.
-    tuner.defineArgs(*this);
-
     // Analyze command line options.
     analyze(argc, argv);
-    tuner.loadArgs(duck, *this);
+    tuner_args.loadArgs(duck, *this);
 
 #if defined(TS_WINDOWS)
     // Test options on Windows. The legacy option "--enumerate-devices" means "--test enumerate-devices".
-    test_type = enumValue(u"test", present(u"enumerate-devices") ? ts::DirectShowTest::ENUMERATE_DEVICES : ts::DirectShowTest::NONE);
+    if (present(u"list-devices")) {
+        test_type = ts::DirectShowTest::LIST_DEVICES;
+    }
+    else if (present(u"enumerate-devices")) {
+        test_type = ts::DirectShowTest::ENUMERATE_DEVICES;
+    }
+    else {
+        test_type = enumValue(u"test", ts::DirectShowTest::NONE);
+    }
 #endif
 
     exitOnError();
@@ -109,17 +120,12 @@ Options::Options(int argc, char *argv[]) :
 //----------------------------------------------------------------------------
 
 namespace {
-    void ListTuner(ts::Tuner& tuner, int tuner_index, Options& opt)
+    void ListTuner(ts::DuckContext& duck, ts::Tuner& tuner, int tuner_index, Options& opt)
     {
         // If not opened, nothing to display.
         if (!tuner.isOpen()) {
             return;
         }
-
-        // Get tuner information.
-        const ts::UString info(tuner.deviceInfo());
-        bool something = !info.empty();
-        const ts::DeliverySystemSet systems(tuner.deliverySystems());
 
         // Display name. On Windows, since names are weird, always display
         // the adapter number and use quotes around tuner name.
@@ -135,20 +141,12 @@ namespace {
 #endif
 
         // Display tuner information.
+        const ts::UString info(tuner.deviceInfo());
         std::cout << " (";
-        if (something) {
-            std::cout << info;
+        if (!info.empty()) {
+            std::cout << info << ", ";
         }
-        for (size_t ds = 0; ds < systems.size(); ++ds) {
-            if (systems.test(ds)) {
-                if (something) {
-                    std::cout << ", ";
-                }
-                std::cout << ts::DeliverySystemEnum.name(int(ds));
-                something = true;
-            }
-        }
-        std::cout << ")" << std::endl;
+        std::cout << tuner.deliverySystems().toString() << ")" << std::endl;
 
         // Display verbose information
         if (opt.verbose()) {
@@ -168,16 +166,27 @@ int MainCode(int argc, char *argv[])
 {
     Options opt(argc, argv);
 
+#if defined(TS_WINDOWS)
+    // Specific DirectShow tests on Windows.
+    if (opt.test_type != ts::DirectShowTest::NONE) {
+        ts::DirectShowTest ds(std::cout, opt);
+        ds.runTest(opt.test_type);
+        return EXIT_SUCCESS;
+    }
+#endif
+
     // List DVB tuner devices
-    if (!opt.tuner.device_name.empty()) {
+    if (!opt.tuner_args.device_name.empty()) {
         // One device name specified.
-        ts::Tuner tuner(opt.tuner.device_name, true, opt);
-        ListTuner(tuner, -1, opt);
+        ts::Tuner tuner(opt.duck);
+        if (opt.tuner_args.configureTuner(tuner, opt)) {
+            ListTuner(opt.duck, tuner, -1, opt);
+        }
     }
     else {
         // List all tuners.
         ts::TunerPtrVector tuners;
-        if (!ts::Tuner::GetAllTuners(tuners, opt)) {
+        if (!ts::Tuner::GetAllTuners(opt.duck, tuners, opt)) {
             return EXIT_FAILURE;
         }
         else if (tuners.empty()) {
@@ -188,16 +197,10 @@ int MainCode(int argc, char *argv[])
                 std::cout << std::endl;
             }
             for (size_t i = 0; i < tuners.size(); ++i) {
-                ListTuner(*tuners[i], int(i), opt);
+                ListTuner(opt.duck, *tuners[i], int(i), opt);
             }
         }
     }
-
-#if defined(TS_WINDOWS)
-    // Specific DirectShow tests on Windows.
-    ts::DirectShowTest ds(std::cout, opt);
-    ds.runTest(opt.test_type);
-#endif
 
     return opt.valid() ? EXIT_SUCCESS : EXIT_FAILURE;
 }

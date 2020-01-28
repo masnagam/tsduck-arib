@@ -34,6 +34,7 @@
 
 #pragma once
 #include "tsReport.h"
+#include "tsVariable.h"
 
 namespace ts {
     //!
@@ -57,10 +58,12 @@ namespace ts {
         //! Get the number of properties in the buffer.
         //! @return The number of properties in the buffer.
         //!
-        size_t count() const
-        {
-            return size_t(_prop_head.num);
-        }
+        size_t count() const { return size_t(_prop_head.num); }
+
+        //!
+        //! Clear all previously added commands.
+        //!
+        void clear() { _prop_head.num = 0; }
 
         //!
         //! Add a new property.
@@ -69,6 +72,19 @@ namespace ts {
         //! @return The index in property buffer.
         //!
         size_t add(uint32_t cmd, uint32_t data = -1);
+
+        //!
+        //! Add a new property if a variable is set.
+        //! @param [in] cmd Command code.
+        //! @param [in] data Optional command data.
+        //!
+        template <typename ENUM, typename std::enable_if<std::is_integral<ENUM>::value || std::is_enum<ENUM>::value>::type* = nullptr>
+        void addVar(uint32_t cmd, const Variable<ENUM>& data)
+        {
+            if (data.set()) {
+                add(cmd, uint32_t(data.value()));
+            }
+        }
 
         //!
         //! Search a property in the buffer.
@@ -89,33 +105,44 @@ namespace ts {
         //! @param [in] index Index in buffer.
         //! @return The data value at @a index or @link UNKNOWN @endlink if out of range.
         //!
-        uint32_t getByIndex(size_t index) const
-        {
-            return index >= size_t(_prop_head.num) ? UNKNOWN : _prop_buffer[index].u.data;
-        }
+        uint32_t getByIndex(size_t index) const;
+
+        //!
+        //! Get the multiple values of a property in the buffer.
+        //! To be used with properties which return a set of integer values.
+        //! @tparam INT An integer or enum type, any size, signed or unsigned.
+        //! @param [out] values A set receiving all integer values.
+        //! @param [in] cmd Command code.
+        //!
+        template <typename INT, typename std::enable_if<std::is_integral<INT>::value || std::is_enum<INT>::value>::type* = nullptr>
+        void getValuesByCommand(std::set<INT>& values, uint32_t cmd) const;
+
+        //!
+        //! Get the multiple values of a property at a specified index.
+        //! To be used with properties which return a set of integer values.
+        //! @tparam INT An integer or enum type, any size, signed or unsigned.
+        //! @param [out] values A set receiving all integer values.
+        //! @param [in] index Index in buffer.
+        //!
+        template <typename INT, typename std::enable_if<std::is_integral<INT>::value || std::is_enum<INT>::value>::type* = nullptr>
+        void getValuesByIndex(std::set<INT>& values, size_t index) const;
 
         //!
         //! Get the address of the @c dtv_properties structure for @c ioctl() call.
         //! @return The address of the @c dtv_properties structure.
         //!
-        const ::dtv_properties* getIoctlParam() const
-        {
-            return &_prop_head;
-        }
+        const ::dtv_properties* getIoctlParam() const { return &_prop_head; }
 
         //!
         //! Get the address of the @c dtv_properties structure for @c ioctl() call.
         //! @return The address of the @c dtv_properties structure.
         //!
-        ::dtv_properties* getIoctlParam()
-        {
-            return &_prop_head;
-        }
+        ::dtv_properties* getIoctlParam() { return &_prop_head; }
 
         //!
         //! Returned value for unknown data.
         //!
-        static const uint32_t UNKNOWN = ~0;
+        static constexpr uint32_t UNKNOWN = ~0U;
 
         //!
         //! Display the content of the object (for debug purpose).
@@ -137,3 +164,5 @@ namespace ts {
         ::dtv_properties _prop_head;
     };
 }
+
+#include "tsDTVPropertiesTemplate.h"

@@ -40,73 +40,16 @@ TSDUCK_SOURCE;
 
 
 //----------------------------------------------------------------------------
-// Simple virtual methods.
-//----------------------------------------------------------------------------
-
-bool ts::DektecInputPlugin::isRealTime()
-{
-    return true;
-}
-
-size_t ts::DektecInputPlugin::stackUsage() const
-{
-    return 512 * 1024; // 512 kB
-}
-
-
-//----------------------------------------------------------------------------
-// Stubs when compiled without Dektec support.
+// Class internals.
 //----------------------------------------------------------------------------
 
 #if defined(TS_NO_DTAPI)
 
-ts::DektecInputPlugin::DektecInputPlugin(TSP* tsp_) :
-    InputPlugin(tsp_, u"Receive packets from a Dektec DVB-ASI device", u"[options]"),
-    _guts(nullptr)
+class ts::DektecInputPlugin::Guts
 {
-}
-
-ts::DektecInputPlugin::~DektecInputPlugin()
-{
-}
-
-bool ts::DektecInputPlugin::getOptions()
-{
-    return true;
-}
-
-bool ts::DektecInputPlugin::start()
-{
-    tsp->error(TS_NO_DTAPI_MESSAGE);
-    return false;
-}
-
-bool ts::DektecInputPlugin::configureLNB()
-{
-    return false;
-}
-
-bool ts::DektecInputPlugin::stop()
-{
-    return true;
-}
-
-ts::BitRate ts::DektecInputPlugin::getBitrate()
-{
-    return 0;
-}
-
-size_t ts::DektecInputPlugin::receive(TSPacket*, TSPacketMetadata*, size_t)
-{
-    tsp->error(TS_NO_DTAPI_MESSAGE);
-    return 0;
-}
+};
 
 #else
-
-//----------------------------------------------------------------------------
-// Class internals.
-//----------------------------------------------------------------------------
 
 class ts::DektecInputPlugin::Guts
 {
@@ -135,7 +78,7 @@ ts::DektecInputPlugin::Guts::Guts() :
     is_started(false),
     dev_index(-1),
     chan_index(-1),
-    timeout_ms(0),
+    timeout_ms(-1),
     device(),
     dtdev(),
     chan(),
@@ -149,6 +92,22 @@ ts::DektecInputPlugin::Guts::Guts() :
     high_band(false),
     lnb_setup(false)
 {
+}
+
+#endif
+
+//----------------------------------------------------------------------------
+// Simple virtual methods.
+//----------------------------------------------------------------------------
+
+bool ts::DektecInputPlugin::isRealTime()
+{
+    return true;
+}
+
+size_t ts::DektecInputPlugin::stackUsage() const
+{
+    return 512 * 1024; // 512 kB
 }
 
 
@@ -353,6 +312,7 @@ ts::DektecInputPlugin::DektecInputPlugin(TSP* tsp_) :
     help(u"receive-timeout",
          u"Specify the data reception timeout in milliseconds. "
          u"This timeout applies to each receive operation, individually. "
+         u"A zero timeout means non-blocking reception. "
          u"By default, receive operations wait for data, possibly forever.");
 
     option(u"satellite-frequency", 0, POSITIVE);
@@ -401,6 +361,65 @@ ts::DektecInputPlugin::DektecInputPlugin(TSP* tsp_) :
 
 
 //----------------------------------------------------------------------------
+// Input destructor
+//----------------------------------------------------------------------------
+
+ts::DektecInputPlugin::~DektecInputPlugin()
+{
+    if (_guts != nullptr) {
+        stop();
+        delete _guts;
+        _guts = nullptr;
+    }
+}
+
+
+//----------------------------------------------------------------------------
+// Stubs when compiled without Dektec support.
+//----------------------------------------------------------------------------
+
+#if defined(TS_NO_DTAPI)
+
+bool ts::DektecInputPlugin::getOptions()
+{
+    return true;
+}
+
+bool ts::DektecInputPlugin::setReceiveTimeout(MilliSecond timeout)
+{
+    return true;
+}
+
+bool ts::DektecInputPlugin::start()
+{
+    tsp->error(TS_NO_DTAPI_MESSAGE);
+    return false;
+}
+
+bool ts::DektecInputPlugin::configureLNB()
+{
+    return false;
+}
+
+bool ts::DektecInputPlugin::stop()
+{
+    return true;
+}
+
+ts::BitRate ts::DektecInputPlugin::getBitrate()
+{
+    return 0;
+}
+
+size_t ts::DektecInputPlugin::receive(TSPacket*, TSPacketMetadata*, size_t)
+{
+    tsp->error(TS_NO_DTAPI_MESSAGE);
+    return 0;
+}
+
+#else
+
+//----------------------------------------------------------------------------
 // Command line options method
 //----------------------------------------------------------------------------
 
@@ -408,7 +427,7 @@ bool ts::DektecInputPlugin::getOptions()
 {
     _guts->dev_index = intValue<int>(u"device", -1);
     _guts->chan_index = intValue<int>(u"channel", -1);
-    _guts->timeout_ms = intValue<int>(u"receive-timeout", -1);
+    _guts->timeout_ms = intValue<int>(u"receive-timeout", _guts->timeout_ms); // preserve previous value
     _guts->sat_number = intValue<int>(u"satellite-number", 0);
     _guts->polarity = enumValue<Polarization>(u"polarity", POL_VERTICAL);
     _guts->high_band = false;
@@ -579,6 +598,19 @@ bool ts::DektecInputPlugin::getOptions()
         }
     }
 
+    return true;
+}
+
+
+//----------------------------------------------------------------------------
+// Set receive timeout from tsp.
+//----------------------------------------------------------------------------
+
+bool ts::DektecInputPlugin::setReceiveTimeout(MilliSecond timeout)
+{
+    if (timeout > 0) {
+        _guts->timeout_ms = int(timeout);
+    }
     return true;
 }
 
@@ -794,20 +826,6 @@ bool ts::DektecInputPlugin::stop()
 
 
 //----------------------------------------------------------------------------
-// Input destructor
-//----------------------------------------------------------------------------
-
-ts::DektecInputPlugin::~DektecInputPlugin()
-{
-    if (_guts != nullptr) {
-        stop();
-        delete _guts;
-        _guts = nullptr;
-    }
-}
-
-
-//----------------------------------------------------------------------------
 // Get input bitrate
 //----------------------------------------------------------------------------
 
@@ -868,11 +886,11 @@ size_t ts::DektecInputPlugin::receive(TSPacket* buffer, TSPacketMetadata* pkt_da
     // Receive packets.
     if (_guts->timeout_ms < 0) {
         // Receive without timeout (wait forever if no input signal).
-        status = _guts->chan.Read(reinterpret_cast<char*> (buffer), int(size));
+        status = _guts->chan.Read(reinterpret_cast<char*>(buffer), int(size));
     }
     else {
         // Receive with timeout (can be null, ie. non-blocking).
-        status = _guts->chan.Read(reinterpret_cast<char*> (buffer), int(size), _guts->timeout_ms);
+        status = _guts->chan.Read(reinterpret_cast<char*>(buffer), int(size), _guts->timeout_ms);
     }
 
     if (status == DTAPI_OK) {

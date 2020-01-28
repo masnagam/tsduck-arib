@@ -38,10 +38,11 @@ TSDUCK_SOURCE;
 // An enumeration of TestType names.
 //
 const ts::Enumeration ts::DirectShowTest::TestNames({
-    {u"none", NONE},
+    {u"none",              NONE},
+    {u"list-devices",      LIST_DEVICES},
     {u"enumerate-devices", ENUMERATE_DEVICES},
-    {u"tuning-spaces", TUNING_SPACES},
-    {u"bda-tuners", BDA_TUNERS},
+    {u"tuning-spaces",     TUNING_SPACES},
+    {u"bda-tuners",        BDA_TUNERS},
 });
 
 
@@ -64,6 +65,9 @@ void ts::DirectShowTest::runTest(TestType type)
 {
     switch (type) {
         case NONE:
+            break;
+        case LIST_DEVICES:
+            listDevices();
             break;
         case ENUMERATE_DEVICES:
             enumerateDevices();
@@ -101,8 +105,8 @@ void ts::DirectShowTest::testBDATuners(const UString& margin)
         _output << std::endl << margin << "=== Testing \"" << tuners.name(tuner_index) << "\"" << std::endl << std::endl;
 
         // Build a DirectShow graph.
-        DirectShowGraph graph(_report);
-        if (!graph.isValid()) {
+        DirectShowGraph graph;
+        if (!graph.initialize(_report)) {
             break; // fatal error
         }
 
@@ -231,18 +235,32 @@ void ts::DirectShowTest::testTuningSpaces(const UString& margin)
 
 
 //-----------------------------------------------------------------------------
+// Brief list of DirectShow devices.
+//-----------------------------------------------------------------------------
+
+void ts::DirectShowTest::listDevices(const UString& margin)
+{
+    displayDevicesByCategory(KSCATEGORY_BDA_NETWORK_PROVIDER, u"Netwok providers", false, margin);
+    displayDevicesByCategory(KSCATEGORY_BDA_NETWORK_TUNER, u"Tuners", false, margin);
+    displayDevicesByCategory(KSCATEGORY_BDA_RECEIVER_COMPONENT, u"Receivers", false, margin);
+    displayDevicesByCategory(KSCATEGORY_BDA_TRANSPORT_INFORMATION, u"Transport information", false, margin);
+    _output << std::endl;
+}
+
+
+//-----------------------------------------------------------------------------
 // Enumerate DirectShow devices.
 //-----------------------------------------------------------------------------
 
 void ts::DirectShowTest::enumerateDevices(const UString& margin)
 {
-    displayDevicesByCategory(KSCATEGORY_CAPTURE, u"CAPTURE", margin);
-    displayDevicesByCategory(KSCATEGORY_SPLITTER, u"SPLITTER", margin);
-    displayDevicesByCategory(KSCATEGORY_TVTUNER, u"TVTUNER", margin);
-    displayDevicesByCategory(KSCATEGORY_BDA_NETWORK_PROVIDER, u"BDA_NETWORK_PROVIDER", margin);
-    displayDevicesByCategory(KSCATEGORY_BDA_TRANSPORT_INFORMATION, u"BDA_TRANSPORT_INFORMATION", margin);
-    displayDevicesByCategory(KSCATEGORY_BDA_RECEIVER_COMPONENT, u"BDA_RECEIVER_COMPONENT", margin);
-    displayDevicesByCategory(KSCATEGORY_BDA_NETWORK_TUNER, u"BDA_NETWORK_TUNER", margin);
+    displayDevicesByCategory(KSCATEGORY_CAPTURE, u"CAPTURE", true, margin);
+    displayDevicesByCategory(KSCATEGORY_SPLITTER, u"SPLITTER", true, margin);
+    displayDevicesByCategory(KSCATEGORY_TVTUNER, u"TVTUNER", true, margin);
+    displayDevicesByCategory(KSCATEGORY_BDA_NETWORK_PROVIDER, u"BDA_NETWORK_PROVIDER", true, margin);
+    displayDevicesByCategory(KSCATEGORY_BDA_TRANSPORT_INFORMATION, u"BDA_TRANSPORT_INFORMATION", true, margin);
+    displayDevicesByCategory(KSCATEGORY_BDA_RECEIVER_COMPONENT, u"BDA_RECEIVER_COMPONENT", true, margin);
+    displayDevicesByCategory(KSCATEGORY_BDA_NETWORK_TUNER, u"BDA_NETWORK_TUNER", true, margin);
     displayTuningSpaces(margin);
     _output << std::endl;
 }
@@ -252,54 +270,72 @@ void ts::DirectShowTest::enumerateDevices(const UString& margin)
 // Display all devices of the specified category
 //-----------------------------------------------------------------------------
 
-bool ts::DirectShowTest::displayDevicesByCategory(const ::GUID& category, const UString& name, const UString& margin)
+bool ts::DirectShowTest::displayDevicesByCategory(const ::GUID& category, const UString& name, bool details, const UString& margin)
 {
-    _output << std::endl << margin << "=== Device category " << name << std::endl;
-
     // Build an instance of all devices of this category.
     DirectShowFilterCategory filters(category, _report);
 
-    // Loop on all enumerated devices.
-    for (size_t index = 0; index < filters.size(); ++index) {
+    if (details) {
+        // Full display.
+        _output << std::endl << margin << "=== Device category " << name << std::endl;
 
-        // Display characteristics of this device filter
-        _output << std::endl << margin << "device \"" << filters.name(index) << "\"" << std::endl;
-        displayObject(filters.filter(index).pointer(), margin + u"  ");
+        // Loop on all enumerated devices.
+        for (size_t index = 0; index < filters.size(); ++index) {
 
-        // List all pins on the filter
-        // Create a pin enumerator
-        ComPtr<::IEnumPins> enum_pins;
-        ::HRESULT hr = filters.filter(index)->EnumPins(enum_pins.creator());
-        if (!ComSuccess(hr, u"IBaseFilter::EnumPins", _report)) {
-            return false;
-        }
-        if (enum_pins.isNull()) {
-            // Not an expected result, probably no pin, not an error.
-            continue;
-        }
+            // Display characteristics of this device filter
+            _output << std::endl << margin << "device \"" << filters.name(index) << "\"" << std::endl;
+            displayObject(filters.filter(index).pointer(), margin + u"  ");
 
-        // Loop on all pins
-        ComPtr<::IPin> pin;
-        while (enum_pins->Next(1, pin.creator(), NULL) == S_OK) {
-
-            // Query direction of this pin
-            ::PIN_DIRECTION dir;
-            hr = pin->QueryDirection(&dir);
-            if (!ComSuccess(hr, u"IPin::QueryDirection", _report)) {
+            // List all pins on the filter
+            // Create a pin enumerator
+            ComPtr<::IEnumPins> enum_pins;
+            ::HRESULT hr = filters.filter(index)->EnumPins(enum_pins.creator());
+            if (!ComSuccess(hr, u"IBaseFilter::EnumPins", _report)) {
                 return false;
             }
-
-            // Get pin info
-            ::PIN_INFO pin_info;
-            hr = pin->QueryPinInfo(&pin_info);
-            if (!ComSuccess(hr, u"IPin::QueryPinInfo", _report)) {
-                return false;
+            if (enum_pins.isNull()) {
+                // Not an expected result, probably no pin, not an error.
+                continue;
             }
-            UString pin_name(ToString(pin_info.achName));
-            pin_info.pFilter->Release();
 
-            _output << std::endl << margin << "  - Pin \"" << pin_name << "\", direction: " << PinDirectionName(dir) << std::endl;
-            displayObject(pin.pointer(), margin + u"    ");
+            // Loop on all pins
+            ComPtr<::IPin> pin;
+            while (enum_pins->Next(1, pin.creator(), NULL) == S_OK) {
+
+                // Query direction of this pin
+                ::PIN_DIRECTION dir;
+                hr = pin->QueryDirection(&dir);
+                if (!ComSuccess(hr, u"IPin::QueryDirection", _report)) {
+                    return false;
+                }
+
+                // Get pin info
+                ::PIN_INFO pin_info;
+                hr = pin->QueryPinInfo(&pin_info);
+                if (!ComSuccess(hr, u"IPin::QueryPinInfo", _report)) {
+                    return false;
+                }
+                UString pin_name(ToString(pin_info.achName));
+                pin_info.pFilter->Release();
+
+                _output << std::endl << margin << "  - Pin \"" << pin_name << "\", direction: " << PinDirectionName(dir) << std::endl;
+                displayObject(pin.pointer(), margin + u"    ");
+            }
+        }
+    }
+    else {
+        // Short display, list only.
+        _output << std::endl << margin << "=== " << name;
+        if (filters.empty()) {
+            _output << " (none)"<< std::endl ;
+        }
+        else {
+            _output << " (" << filters.size() << " found)" << std::endl << std::endl;
+        }
+
+        // Loop on all enumerated devices.
+        for (size_t index = 0; index < filters.size(); ++index) {
+            _output << margin << index <<  ": \"" << filters.name(index) << "\"" << std::endl;
         }
     }
     return true;
@@ -859,6 +895,11 @@ void ts::DirectShowTest::displayInterfaces(::IUnknown* object, const UString& ma
         _I_(IAMWMBufferPassCallback)
         _I_(IAMovieSetup)
         _I_(IAsyncReader)
+        _I_(IATSCChannelTuneRequest)
+        _I_(IATSCComponentType)
+        _I_(IATSCLocator)
+        _I_(IATSCLocator2)
+        _I_(IATSCTuningSpace)
         _I_(IAttributeGet)
         _I_(IAttributeSet)
         _I_(IBDAComparable)
@@ -903,12 +944,18 @@ void ts::DirectShowTest::displayInterfaces(::IUnknown* object, const UString& ma
         _I_(IDVRGB219)
         _I_(IDVSplitter)
         _I_(IDecimateVideoImage)
+        _I_(IDigitalCableLocator)
+        _I_(IDigitalCableTuningSpace)
+        _I_(IDigitalCableTuneRequest)
+        _I_(IDigitalLocator)
         _I_(IDistributorNotify)
         _I_(IDrawVideoImage)
         _I_(IDVBCLocator)
         _I_(IDVBSLocator)
+        _I_(IDVBSLocator2)
         _I_(IDVBSTuningSpace)
         _I_(IDVBTLocator)
+        _I_(IDVBTLocator2)
         _I_(IDVBTuneRequest)
         _I_(IDVBTuningSpace)
         _I_(IDVBTuningSpace2)
@@ -951,6 +998,7 @@ void ts::DirectShowTest::displayInterfaces(::IUnknown* object, const UString& ma
         _I_(IGraphConfigCallback)
         _I_(IGraphVersion)
         _I_(IIPDVDec)
+        _I_(IISDBSLocator)
         _I_(IKsControl)
         _I_(IKsDataTypeHandler)
         _I_(IKsInterfaceHandler)

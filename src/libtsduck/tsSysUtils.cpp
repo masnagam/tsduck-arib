@@ -29,7 +29,7 @@
 
 #include "tsSysUtils.h"
 #include "tsStaticInstance.h"
-#include "tsMemoryUtils.h"
+#include "tsMemory.h"
 #include "tsUID.h"
 #include "tsTime.h"
 #include "tsMutex.h"
@@ -746,24 +746,43 @@ ts::UString ts::SearchConfigurationFile(const UString& fileName)
 // Format an error code into a string
 //----------------------------------------------------------------------------
 
+#if !defined(TS_WINDOWS)
+// Depending on GNU vs. POSIX, strerror_r returns an int or a char*.
+// There are two short functions to handle the strerror_r result.
+// The C++ compiler will automatically invoke the right one.
+// The other one is unused (disable unused warning).
+
+TS_PUSH_WARNING()
+TS_LLVM_NOWARNING(unused-function)
+TS_GCC_NOWARNING(unused-function)
+namespace {
+    // POSIX version, strerror_r returns an int, leave result unmodified.
+    inline void handle_strerror_r(bool& found, char*& result, int strerror_t_ret)
+    {
+        found = strerror_t_ret == 0; // success
+    }
+    // GNU version, strerror_r returns char*, not necessarily in buffer.
+    inline void handle_strerror_r(bool& found, char*& result, char* strerror_t_ret)
+    {
+        result = strerror_t_ret; // actual message
+        found = result != nullptr;
+    }
+}
+TS_POP_WARNING()
+#endif // not Windows
+
+// Portable public interface:
 ts::UString ts::ErrorCodeMessage(ts::ErrorCode code)
 {
 #if defined(TS_WINDOWS)
     return WinErrorMessage(code);
 #else
-    char* result;
     char message[1024];
     TS_ZERO(message);
 
-#if defined(HAVE_INT_STRERROR_R)
-    // POSIX version, strerror_r returns int
-    const bool found = 0 == strerror_r(code, message, sizeof(message));
-    result = message;
-#else
-    // GNU version, strerror_r returns char*, not necessarilly in buffer
-    result = strerror_r(code, message, sizeof(message));
-    const bool found = result != nullptr;
-#endif
+    char* result = message;
+    bool found = false;
+    handle_strerror_r(found, result, strerror_r(code, message, sizeof(message)));
 
     if (found) {
         // Make sure message is nul-terminated.

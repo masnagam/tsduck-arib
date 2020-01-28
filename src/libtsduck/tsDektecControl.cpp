@@ -34,16 +34,6 @@
 #include "tsDektecVPD.h"
 TSDUCK_SOURCE;
 
-// Portable definitions of LED colors.
-#if defined(TS_NO_DTAPI)
-    #define DTAPI_LED_OFF      0
-    #define DTAPI_LED_GREEN    1
-    #define DTAPI_LED_RED      2
-    #define DTAPI_LED_YELLOW   3
-    #define DTAPI_LED_BLUE     4
-    #define DTAPI_LED_HARDWARE 5
-#endif
-
 
 //----------------------------------------------------------------------------
 // Constructor.
@@ -59,7 +49,8 @@ ts::DektecControl::DektecControl(int argc, char *argv[]) :
     _set_led(false),
     _led_state(0),
     _set_input(0),
-    _set_output(0)
+    _set_output(0),
+    _power_mode(-1)
 {
     option(u"", 0, UNSIGNED, 0, 1);
     help(u"",
@@ -76,11 +67,11 @@ ts::DektecControl::DektecControl(int argc, char *argv[]) :
          u"ports which can be either set in input or output mode.");
 
     option(u"led", 'l', Enumeration({
-        {u"off", DTAPI_LED_OFF},
-        {u"green", DTAPI_LED_GREEN},
-        {u"red", DTAPI_LED_RED},
-        {u"yellow", DTAPI_LED_YELLOW},
-        {u"blue", DTAPI_LED_BLUE},
+        {u"off",      DTAPI_LED_OFF},
+        {u"green",    DTAPI_LED_GREEN},
+        {u"red",      DTAPI_LED_RED},
+        {u"yellow",   DTAPI_LED_YELLOW},
+        {u"blue",     DTAPI_LED_BLUE},
         {u"hardware", DTAPI_LED_HARDWARE},
     }));
     help(u"led", u"state",
@@ -96,6 +87,9 @@ ts::DektecControl::DektecControl(int argc, char *argv[]) :
     help(u"output", u"port-number",
          u"Set the specified port in output mode. This applies to bidirectional "
          u"ports which can be either set in input or output mode.");
+
+    option(u"power-mode", 'p', DektecPowerMode);
+    help(u"power-mode", u"On DTU-315 USB modulators, set the power mode to the specified value.");
 
     option(u"reset", 'r');
     help(u"reset", u"Reset the device.");
@@ -116,6 +110,7 @@ ts::DektecControl::DektecControl(int argc, char *argv[]) :
     _set_input  = intValue(u"input", -1);
     _set_output = intValue(u"output", -1);
     _wait_sec   = intValue(u"wait", _set_led ? 5 : 0);
+    _power_mode = intValue(u"power-mode", -1);
 
     exitOnError();
 }
@@ -486,6 +481,20 @@ int ts::DektecControl::oneDevice(const DektecDevice& device)
             std::cerr << "* Error setting LED: " << DektecStrError(status) << std::endl;
             dtdev.Detach();
             return EXIT_FAILURE;
+        }
+    }
+
+    if (_power_mode >= 0) {
+        // This is expected to work on DTA-315 modulator for which there is only one port.
+        // Loop on all output ports, just in case.
+        for (size_t ci = 0; ci < device.output.size(); ci++) {
+            const int port = device.output[ci].m_Port;
+            status = dtdev.SetIoConfig(port, DTAPI_IOCONFIG_PWRMODE, _power_mode);
+            if (status != DTAPI_OK) {
+                std::cerr << "* Error setting power mode on port " << port << ": " << DektecStrError(status) << std::endl;
+                dtdev.Detach();
+                return EXIT_FAILURE;
+            }
         }
     }
 

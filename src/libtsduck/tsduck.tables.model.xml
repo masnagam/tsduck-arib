@@ -1111,6 +1111,7 @@
 
     <HEVC_timing_and_HRD_descriptor
         hrd_management_valid="bool, required"
+        target_schedule_idx="uint5, optional"
         N_90khz="uint32, optional"
         K_90khz="uint32, optional"
         num_units_in_tick="uint32, optional"/>
@@ -1124,10 +1125,13 @@
         interlaced_source_flag="bool, required"
         non_packed_constraint_flag="bool, required"
         frame_only_constraint_flag="bool, required"
+        copied_44bits="uint44, default=0"
         reserved_zero_44bits="uint44, default=0"
         level_idc="uint8, required"
         HEVC_still_present_flag="bool, required"
         HEVC_24hr_picture_present_flag="bool, required"
+        sub_pic_hrd_params_not_present="bool, default=true"
+        HDR_WCG_idc="uint2, default=3"
         temporal_id_min="uint3, optional, specify both min and max or none"
         temporal_id_max="uint3, optional, specify both min and max or none"/>
 
@@ -1281,6 +1285,34 @@
 
     <network_name_descriptor network_name="string, required"/>
 
+    <nordig_logical_channel_descriptor_v1>
+      <!-- One per service -->
+      <service service_id="uint16, required"
+               logical_channel_number="uint14, required"
+               visible_service="bool, default=true"/>
+    </nordig_logical_channel_descriptor_v1>
+
+    <nordig_logical_channel_descriptor_v2>
+      <!-- One per channel list -->
+      <channel_list id="uint8, required"
+                    name="string, required"
+                    country_code="char3, required">
+        <!-- One per service in the channel list -->
+        <service service_id="uint16, required"
+                 logical_channel_number="uint10, required"
+                 visible_service="bool, default=true"/>
+      </channel_list>
+    </nordig_logical_channel_descriptor_v2>
+
+    <sky_logical_channel_number_descriptor region_id="uint16, required">
+      <!-- One per service -->
+      <service service_id="uint16, required"
+               service_type="uint8, required"
+               channel_id="uint16, required"
+               logical_channel_number="uint16, required"
+               sky_id="uint16, required"/>
+    </sky_logical_channel_number_descriptor>
+
     <NPT_endpoint_descriptor
         start_NPT="uint33, required"
         stop_NPT="uint33, required"/>
@@ -1319,7 +1351,7 @@
 
     <private_data_indicator_descriptor private_data_indicator="uint32, required"/>
 
-    <private_data_specifier_descriptor private_data_specifier="uint32|eacem|eutelsat, required"/>
+    <private_data_specifier_descriptor private_data_specifier="uint32|eacem|eutelsat|nordig, required"/>
 
     <protection_message_descriptor>
       <!-- One per component, up to 15 components -->

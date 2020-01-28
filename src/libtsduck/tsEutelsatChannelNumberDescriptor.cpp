@@ -26,11 +26,6 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //
 //----------------------------------------------------------------------------
-//
-//  Representation of a logical_channel_number_descriptor.
-//  Private descriptor, must be preceeded by the EACEM/EICTA PDS.
-//
-//----------------------------------------------------------------------------
 
 #include "tsEutelsatChannelNumberDescriptor.h"
 #include "tsDescriptor.h"
@@ -79,20 +74,14 @@ ts::EutelsatChannelNumberDescriptor::EutelsatChannelNumberDescriptor(DuckContext
 
 void ts::EutelsatChannelNumberDescriptor::serialize(DuckContext& duck, Descriptor& desc) const
 {
-    ByteBlockPtr bbp(new ByteBlock(2));
-    CheckNonNull(bbp.pointer());
-
-    for (EntryList::const_iterator it = entries.begin(); it != entries.end(); ++it) {
+    ByteBlockPtr bbp(serializeStart());
+    for (auto it = entries.begin(); it != entries.end(); ++it) {
         bbp->appendUInt16(it->onetw_id);
         bbp->appendUInt16(it->ts_id);
         bbp->appendUInt16(it->service_id);
         bbp->appendUInt16(0xF000 | (it->ecn & 0x0FFF));
     }
-
-    (*bbp)[0] = _tag;
-    (*bbp)[1] = uint8_t(bbp->size() - 2);
-    Descriptor d(bbp, SHARE);
-    desc = d;
+    serializeEnd(desc, bbp);
 }
 
 
