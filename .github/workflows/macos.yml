@@ -6,10 +6,11 @@ jobs:
   build:
     runs-on: macOS-latest
     steps:
+      - uses: actions/checkout@v1
       - name: Install deps
         run: |
-          brew install \
-            autoconf automake gnu-sed grep dos2unix libtool make pkg-config
+          build/install-prerequisites.sh
+          brew install autoconf automake libtool pkg-config
       - name: Install aribb24
         run: |
           mkdir -p /tmp/aribb24
@@ -22,7 +23,6 @@ jobs:
           make -j $(sysctl -n hw.ncpu)
           sudo make install
           rm -rf /tmp/aribb24
-      - uses: actions/checkout@v1
       - name: Build
         run: |
           make -j $(sysctl -n hw.ncpu) ARIB=1 NOCURL=1 NODTAPI=1 NOPCSC=1

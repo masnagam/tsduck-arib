@@ -6,12 +6,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v1
       - name: Install deps
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends autoconf automake cmake dos2unix g++-8 libtool make pkg-config
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 80
+          build/install-prerequisites.sh
+          sudo apt-get install -y --no-install-recommends autoconf automake libtool pkg-config
       - name: Install aribb24
         run: |
           mkdir -p /tmp/aribb24
@@ -24,8 +23,7 @@ jobs:
           make -j $(nproc)
           sudo make install
           rm -rf /tmp/aribb24
-      - uses: actions/checkout@v1
-      - name: Build and run tests
+      - name: Build
         run: |
           make -j $(nproc) ARIB=1 NOCURL=1 NODTAPI=1 NOPCSC=1
         env:
