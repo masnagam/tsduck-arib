@@ -13,7 +13,7 @@ In practice, TSDuck is used for:
 - Monitor and report conditions on the stream (video and audio properties, bitrates, crypto-periods, signalization).
 - On-the-fly transformation or injection of content and signalization.
 - Modify, remove, rename, extract services.
-- Work on live transport streams, DVB-S/C/T, ATSC, ASI, IP-TV, HTTP, HLS or offline transport stream files.
+- Work on live transport streams, DVB-S/C/T, ATSC, ASI, IP-TV, HTTP, HLS, SRT or offline transport stream files.
 - Use specialized hardware such as cheap DVB or ATSC tuners (USB, PCI), professional Dektec devices, cheap HiDes modulators.
 - Re-route transport streams to other applications.
 - Extract or inject Multi-Protocol Encapsulation (MPE) between TS and UDP/IP.
@@ -60,11 +60,16 @@ The command `tsversion --check` can be used to check if a new version of TSDuck 
 online. The command `tsversion --upgrade` downloads the latest binaries for the current
 operating system and upgrades TSDuck.
 
+### Project resources
+
+TSDuck is developed by one single developer on spare time and on personal expenses.
+You may consider [contributing](https://tsduck.io/donate/) to the hardware and Web hosting costs
+using [![Donate](https://tsduck.io/images/donate-paypal.svg)](https://tsduck.io/donate/)
+
 ### License
 
 TSDuck is distributed under the terms of the Simplified BSD License.
 See the file `LICENSE.txt` for details.
 
-*Copyright (c) 2005-2019, Thierry Lelegard*<br/>
-*Copyright (c) 2019 Masayuki Nagamachi <masnagam@gmail.com>*<br/>
+*Copyright (c) 2005-2020, Thierry Lelegard*<br/>
 *All rights reserved*

@@ -1,7 +1,7 @@
 ;-----------------------------------------------------------------------------
 ;
 ;  TSDuck - The MPEG Transport Stream Toolkit
-;  Copyright (c) 2005-2019, Thierry Lelegard
+;  Copyright (c) 2005-2020, Thierry Lelegard
 ;  All rights reserved.
 ;
 ;  Redistribution and use in source and binary forms, with or without
@@ -28,13 +28,14 @@
 ;-----------------------------------------------------------------------------
 ;
 ;  NSIS script to build the TSDuck binary installer for Windows.
-;  Do not invoke NSIS directly, use Build-Installer.ps1.
+;  Do not invoke NSIS directly, use build-installer.ps1.
 ;
 ;  Required command-line definitions:
 ;  - Version : Product version.
 ;  - VersionInfo : Product version info in Windows format.
 ;  - BinDir : Directory of built binaries (.exe and .dll).
 ;  - Win64 : If defined, generate a 64-bit installer (default: 32-bit).
+;  - HeadersDir : Directory containing all header files (development options).
 ;  - VCRedist : Full path of the MSVC redistributable installer.
 ;  - VCRedistName : Base name of the MSVC redistributable installer.
 ;  - NoTeletext : Disable Teletext plugins.
@@ -64,7 +65,7 @@ VIAddVersionKey ProductName "TSDuck"
 VIAddVersionKey ProductVersion "${Version}"
 VIAddVersionKey Comments "TSDuck - The MPEG Transport Stream Toolkit"
 VIAddVersionKey CompanyName "Thierry Lelegard"
-VIAddVersionKey LegalCopyright "Copyright (c) 2005-2019, Thierry Lelegard"
+VIAddVersionKey LegalCopyright "Copyright (c) 2005-2020, Thierry Lelegard"
 VIAddVersionKey FileVersion "${VersionInfo}"
 VIAddVersionKey FileDescription "TSDuck - The MPEG Transport Stream Toolkit"
 
@@ -74,6 +75,9 @@ VIAddVersionKey FileDescription "TSDuck - The MPEG Transport Stream Toolkit"
 !else
     OutFile "${InstallerDir}\TSDuck-Win32-${Version}.exe"
 !endif
+
+; Generate a Unicode installer (default is ANSI).
+Unicode true
 
 ; Registry key for environment variables
 !define EnvironmentKey '"SYSTEM\CurrentControlSet\Control\Session Manager\Environment"'
@@ -144,8 +148,8 @@ Section "Tools & Plugins" SectionTools
     !else
         File "${BinDir}\ts*.dll"
     !endif
-    File "${RootDir}\src\libtsduck\tsduck*.xml"
-    File "${RootDir}\src\libtsduck\tsduck*.names"
+    File "${RootDir}\src\libtsduck\dtv\tsduck*.xml"
+    File "${RootDir}\src\libtsduck\dtv\tsduck*.names"
 
 SectionEnd
 
@@ -161,7 +165,6 @@ Section "Documentation" SectionDocumentation
     SetOutPath "$INSTDIR\doc"
     File "${RootDir}\doc\tsduck.pdf"
     File "${RootDir}\CHANGELOG.txt"
-    File "${RootDir}\LICENSE.txt"
 
     ; Create shortcuts in start menu.
     CreateDirectory "$SMPROGRAMS\TSDuck"
@@ -185,12 +188,7 @@ Section /o "Development" SectionDevelopment
     ; TSDuck header files.
     CreateDirectory "$INSTDIR\include"
     SetOutPath "$INSTDIR\include"
-    !ifdef NoTeletext
-        File /x tsTeletextDemux.h /x tsTeletextCharset.h "${RootDir}\src\libtsduck\*.h"
-    !else
-        File "${RootDir}\src\libtsduck\*.h"
-    !endif
-    File "${RootDir}\src\libtsduck\windows\*.h"
+    File "${HeadersDir}\*.h"
 
     ; TSDuck libraries.
     CreateDirectory "$INSTDIR\lib"
@@ -230,6 +228,11 @@ Section "-Common" SectionCommon
 
     ; Delete obsolete files from previous versions.
     Delete "$INSTDIR\setup\vc*redist*.exe"
+
+    ; License files.
+    SetOutPath "$INSTDIR"
+    File "${RootDir}\LICENSE.txt"
+    File "${RootDir}\OTHERS.txt"
 
     ; Setup tools.
     CreateDirectory "$INSTDIR\setup"
@@ -342,6 +345,8 @@ Section "Uninstall"
     RMDir /r "$0\include"
     RMDir /r "$0\lib"
     Delete "$0\tsduck.props"
+    Delete "$0\LICENSE.txt"
+    Delete "$0\OTHERS.txt"
     Delete "$0\setup\setpath.exe"
     Delete "$0\setup\${VCRedistName}"
     RMDir "$0\setup"

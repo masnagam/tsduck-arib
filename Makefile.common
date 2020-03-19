@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#  Copyright (c) 2005-2019, Thierry Lelegard
+#  Copyright (c) 2005-2020, Thierry Lelegard
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -606,7 +606,7 @@ ROOTDIR := $(abspath $(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST)))))
 SUBDIRS = $(sort $(patsubst %/,%,$(wildcard */)))
 
 # List of subdirectories to ignore in make recursion.
-NORECURSE_SUBDIRS += debug release debug-% release-% Debug Release Debug-% Release-% .vs ipch %.t2d .git cov-int
+NORECURSE_SUBDIRS += tmp bin debug release debug-% release-% Debug Release Debug-% Release-% .vs ipch %.t2d .git cov-int
 
 # Actual recurse order. If the user did not define RECURSE_ORDER, use all
 # subdirectories, except those for which we know there is nothing to make.
@@ -732,6 +732,8 @@ ifeq ($(GCC_VERSION_DONE),)
         unexport GCC_6_OR_MORE
     endif
     export LLVM_VERSION := $(shell clang -dumpversion 2>/dev/null)
+    export USE_GCC := $(if $(shell $(CXX) --version 2>/dev/null | grep -i -e gcc -e g++),true,)
+    export USE_LLVM := $(if $(shell $(CXX) --version 2>/dev/null | grep -i clang),true,)
 endif
 
 # When C++ source files are present, automatically define LDCXX.
@@ -781,11 +783,11 @@ CXXFLAGS_INCLUDES += $(CFLAGS_INCLUDES)
 COMMON_WARNINGS = -Werror
 CFLAGS_WARNINGS = $(COMMON_WARNINGS)
 CXXFLAGS_WARNINGS = $(COMMON_WARNINGS)
-ifdef MACOS
-    COMMON_WARNINGS += -Weverything
+ifdef USE_LLVM
+    COMMON_WARNINGS += -Weverything -Wno-c++98-compat-pedantic
 else
     COMMON_WARNINGS += -Wall -Wextra
-    COMMON_WARNINGS += -Wformat-nonliteral -Wformat-security -Wswitch-default  -Wuninitialized \
+    COMMON_WARNINGS += -Wformat-nonliteral -Wformat-security -Wswitch-default -Wuninitialized \
                        -Wfloat-equal -Wundef -Wpointer-arith
     CFLAGS_WARNINGS += -Wstrict-prototypes -Wmissing-prototypes -Winit-self -Wtraditional \
                        -Wbad-function-cast -Wc++-compat
@@ -944,7 +946,7 @@ endif
 clean:
 	@echo '  [CLEAN] $(CURDIR)'; \
 	rm -rf $(EXTRA_CLEAN) *~ \
-	    *.o *.ko *.a *.gcov *.dep *.tmp *.out *.log *.tlog core core.* vgcore.* *.stackdump \
+	    *.o *.ko *.a *.gcov *.dep tmp *.tmp *.out *.log *.tlog core core.* vgcore.* *.stackdump \
 	    $(OBJDIR)/*.o $(OBJDIR)/*.ko $(OBJDIR)/*.a $(OBJDIR)/*.dep $(OBJDIR)/*.tmp $(OBJDIR)/*.out \
 	    $(OBJDIR)/*.log $(OBJDIR)/*.tlog $(OBJDIR)/core $(OBJDIR)/core.* $(OBJDIR)/vgcore.*
 	+@$(RECURSE)
@@ -971,7 +973,7 @@ NOSOURCE = \
 DOXYGEN ?= $(call F_COMMAND,doxygen,doxygen)
 .PHONY: doxygen
 doxygen:
-	@[ -e Doxyfile ] && $(DOXYGEN) || $(RECURSE)
+	@[ -e Doxyfile ] && $(DOXYGEN) $(DOXYGEN_FLAGS) || $(RECURSE)
 
 # Texinfo document generation.
 MAKEINFO ?= makeinfo

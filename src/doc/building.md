@@ -10,103 +10,55 @@ on Windows and Linux. macOS can only support files and IP for TS input and outpu
 
 ## Windows {#reqwindows}
 
-- Visual Studio 2019 Community Edition. This is the free version of Visual Studio.
-  It can be downloaded [here](https://www.visualstudio.com/downloads/).
+First, install Visual Studio Community Edition.
+This is the free version of Visual Studio.
+It can be downloaded [here](https://www.visualstudio.com/downloads/).
+If you already have Visual Studio Enterprise Edition (the commercial version),
+it is fine, no need to install the Community Edition.
 
-- Doxygen for Windows. Download [here](http://www.doxygen.org/download.html).
+Then, execute the PowerShell script `build\install-prerequisites.ps1`.
+It downloads and installs the requested packages which are necessary
+to build TSDuck on Windows.
 
-- Graphviz for Windows (used by Doxygen to generate graphs and diagrams).
-  Download [here](https://graphviz.gitlab.io/_pages/Download/Download_windows.html).
+If you prefer to collect the various installers yourself, follow the links to
+[NSIS downloads](http://nsis.sourceforge.net/Download),
+[SRT downloads](https://github.com/tsduck/srt-win-installer/releases/latest),
+[DTAPI downloads](https://www.dektec.com/downloads/SDK),
+[Doxygen downloads](http://www.doxygen.org/download.html) and
+[Graphviz downloads](https://graphviz.gitlab.io/_pages/Download/Download_windows.html).
 
-- NSIS, the NullSoft Scriptable Install System.
-  Download [here](http://nsis.sourceforge.net/Download).
+## Linux and macOS {#reqfedora}
 
-- Optional Dektec Windows SDK (DTAPI): Execute the PowerShell script `dektec\Download-Install-Dtapi.ps1`.
-  It downloads and installs the Dektec Windows SDK from the Dektec site.
-  Alternatively, you may download it [here](http://www.dektec.com/products/SDK/DTAPI/Downloads/WinSDK.zip).
-  TSDuck project files will detect DTAPI automatically. See the Visual Studio property
-  file `build\msvc\msvc-use-dtapi.props` for details.
+Execute the shell-script `build/install-prerequisites.sh`.
+It downloads and installs the requested packages which are necessary
+to build TSDuck. The list of packages and how to install them depend
+on the operating system distribution and version.
 
-## Fedora {#reqfedora}
+Currently, the script supports the following operating systems:
+- macOS
+- Ubuntu
+- Debian
+- Raspbian (Debian for Raspberry Pi)
+- Fedora
+- Red Hat Enterprise Linux
+- CentOS
+- Alpine Linux
 
-- Setup for a TSDuck native build:
-~~~~
-dnf install gcc-c++ doxygen dos2unix graphviz curl pcsc-tools pcsc-lite-devel libcurl libcurl-devel rpmdevtools
-~~~~
-
-- Setup to build 32-bit TSDuck on 64-bit system (command `make m32`):
-~~~~
-dnf install glibc-devel.i686 libstdc++-devel.i686 pcsc-lite-devel.i686 libcurl-devel.i686
-~~~~
-
-## Red Hat Entreprise Linux, CentOS {#reqrhel}
-
-- Setup for a TSDuck native build:
-~~~~
-yum install gcc-c++ doxygen dos2unix graphviz curl pcsc-tools pcsc-lite-devel libcurl libcurl-devel rpmdevtools
-~~~~
-
-- Setup to build 32-bit TSDuck on 64-bit system (command `make m32`):
-~~~~
-yum install glibc-devel.i686 libstdc++-devel.i686 pcsc-lite-devel.i686 libcurl-devel.i686
-~~~~
-
-## Ubuntu, Debian, Raspbian {#requbuntu}
-
-- Setup for a TSDuck native build:
-~~~~
-apt install g++ dpkg-dev doxygen dos2unix graphviz curl pcscd libpcsclite-dev libcurl3 libcurl3-dev
-~~~~
-
-- Starting with Ubuntu 18.04, `libcurl3` has been replaced by `libcurl4` and the installation commmand becomes:
-~~~~
-apt install g++ dpkg-dev doxygen dos2unix graphviz curl pcscd libpcsclite-dev libcurl4 libcurl4-openssl-dev
-~~~~
-
-- It is not possible to build 32-bit TSDuck on 64-bit Ubuntu system (command `make m32`) because
-  there is no 32-bit cross-compiled package for pcsc on Ubuntu 64-bit.
-
-## Alpine Linux {#reqalpine}
-
-- Setup for a TSDuck native build, including a few useful tools:
-~~~~
-apk add bash coreutils diffutils procps util-linux dos2unix git make g++ doxygen graphviz linux-headers curl pcsc-lite-dev curl-dev
-~~~~
-
-## All Linux distros {#reqlinux}
-
-- Optional Dektec DTAPI: The command `make` at the top level will automatically
-  download the LinuxSDK from the Dektec site. See `dektec/Makefile` for details.
-  There is no manual setup for DTAPI on Linux.
+Dektec DTAPI: The command `make` at the top level will automatically
+download the LinuxSDK from the Dektec site. See `dektec/Makefile` for details.
+There is no manual setup for DTAPI on Linux.
 
 But note that the Dektec DTAPI is available only for Linux distros on Intel CPU's
 with the GNU libc. Non-Intel systems (for instance ARM-based devices such as
 Raspberry Pi) cannot use Dektec devices. Similarly, Intel-based distros using
-another libc (for instance Alpine Linux which uses musl libc) cannot use Dektec
+a non-standard libc (for instance Alpine Linux which uses musl libc) cannot use Dektec
 devices either.
-
-## macOS {#reqmac}
-
-- Install the Xcode command line utilities (in other words, the _clang_ compiler suite):
-~~~~
-xcode-select --install
-~~~~
-
-- Install the [Homebrew](https://brew.sh/) package manager:
-~~~~
-ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-~~~~
-
-- Install common open source tools using Homebrew:
-~~~~
-brew install pcsc-lite doxygen graphviz gnu-sed grep dos2unix
-~~~~
 
 # Building the TSDuck binaries {#buildbin}
 
 ## Windows {#buildwindows}
 
-Execute the PowerShell script `build\Build.ps1`. The TSDuck binaries, executables and
+Execute the PowerShell script `build\build.ps1`. The TSDuck binaries, executables and
 DLL's, are built in directories `msvc\Release-Win32` and `msvc\Release-x64`
 for 32-bit and 64-bit platforms respectively.
 
@@ -134,6 +86,7 @@ The following `make` variables can be defined:
 - `NODTAPI` : No Dektec support, remove dependency to `DTAPI`.
 - `NOCURL`  : No HTTP support, remove dependency to `libcurl`.
 - `NOPCSC`  : No smartcard support, remove dependency to `pcsc-lite`.
+- `NOSRT`   : No SRT (Secure Reliable Transport), remove dependency to `libsrt`.
 - `NOTELETEXT` : No Teletext support, remove teletext handling code.
 
 The following command, for instance, builds TSDuck without dependency
@@ -175,7 +128,7 @@ into the git repository either.
 
 ## Windows {#instwindows}
 
-Execute the PowerShell script `build\Build-Installer.ps1`.
+Execute the PowerShell script `build\build-installer.ps1`.
 Two installers are built, for 32-bit and 64-bit systems respectively.
 
 ## Fedora, CentOS, Red Hat Entreprise Linux {#instrhel}
@@ -316,7 +269,7 @@ tsp: TSDuck - The MPEG Transport Stream Toolkit - version 3.12-730
 On Windows, to cleanup a repository tree and return to a pristine source state,
 execute the following PowerShell script:
 ~~~~
-build\Cleanup.ps1
+build\cleanup.ps1
 ~~~~
 
 On Linux and macOS, the same cleanup task is achieved using the following command:

@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------------------
 #
 #  TSDuck - The MPEG Transport Stream Toolkit
-#  Copyright (c) 2005-2019, Thierry Lelegard
+#  Copyright (c) 2005-2020, Thierry Lelegard
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -47,10 +47,30 @@ PROJECT_LOGO   = ../images/tsduck-32.png
 FILE_PATTERNS    = *.h *.dox *.md
 EXCLUDE_PATTERNS = *Template.h tsduck.h
 INPUT            = ../src/doc ../src/libtsduck ../src/tstools
-EXCLUDE          = ../src/libtsduck/private
 RECURSIVE        = YES
 IMAGE_PATH       = ../images
 OUTPUT_DIRECTORY = ../doxy
+EXCLUDE          = ../src/libtsduck/dtv/private \
+                   ../src/libtsduck/plugin/private
+INCLUDE_PATH     = ../src/libtsduck \
+                   ../src/libtsduck/base \
+                   ../src/libtsduck/base/dvbcharset \
+                   ../src/libtsduck/base/json \
+                   ../src/libtsduck/base/linux \
+                   ../src/libtsduck/base/mac \
+                   ../src/libtsduck/base/network \
+                   ../src/libtsduck/base/unix \
+                   ../src/libtsduck/base/windows \
+                   ../src/libtsduck/base/xml \
+                   ../src/libtsduck/crypto \
+                   ../src/libtsduck/dtv \
+                   ../src/libtsduck/dtv/descriptors \
+                   ../src/libtsduck/dtv/dvbsimulcrypt \
+                   ../src/libtsduck/dtv/linux \
+                   ../src/libtsduck/dtv/mac \
+                   ../src/libtsduck/dtv/tables \
+                   ../src/libtsduck/dtv/windows \
+                   ../src/libtsduck/plugin
 
 # Error reporting:
 
@@ -107,3 +127,7 @@ UML_LOOK               = NO
 DOT_GRAPH_MAX_NODES    = 200
 HAVE_DOT               = $(HAVE_DOT)
 DOT_PATH               = $(DOT_PATH)
+
+# Symbols which cannot easily be avoided in the code:
+
+EXCLUDE_SYMBOLS        = TS_UNIQUE_NAME1, TS_UNIQUE_NAME2

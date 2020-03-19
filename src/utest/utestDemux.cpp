@@ -1,7 +1,7 @@
 //----------------------------------------------------------------------------
 //
 // TSDuck - The MPEG Transport Stream Toolkit
-// Copyright (c) 2005-2019, Thierry Lelegard
+// Copyright (c) 2005-2020, Thierry Lelegard
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -430,9 +430,9 @@ void DemuxTest::testTable(const char* name, const uint8_t* ref_packets, size_t r
     TSUNIT_ASSERT(table2 == table3);
 }
 
-#define TEST_TABLE(title,name) testTable(title, \
-         psi_##name##_packets, sizeof(psi_##name##_packets), \
-         psi_##name##_sections, sizeof(psi_##name##_sections));
+#define TEST_TABLE(title,name) testTable(title,               \
+         psi_##name##_packets, sizeof(psi_##name##_packets),  \
+         psi_##name##_sections, sizeof(psi_##name##_sections))
 
 void DemuxTest::testPAT()
 {

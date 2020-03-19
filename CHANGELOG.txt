@@ -2,6 +2,50 @@ TSDUCK CHANGE LOG AND RELEASE NOTES
 
 -------------------------------------------------------------------------------
 
+VERSION 3.20-1686
+
+[NEW] New commands and plugins:
+
+  * Added command "tspcontrol" to send control commands to a running "tsp".
+  * Added input and output plugins "srt" for Secure Reliable Transport
+    (code contribution from Anthony Delannoy). This plugin is not compiled
+    on all platforms (subject to availability of libsrt).
+  * For developers, the features of "tsp" and "tsswitch" are now easily
+    accessible from the TSDuck library. See classes ts::TSProcessor and
+    ts::InputSwitcher.
+
+[IMP] Improvements on existing commands and plugins:
+
+  * Added option --control-port to "tsp" and other related --control options
+    for use with the new command "tspcontrol".
+  * Added option --eit-date-only to plugin "timeref".
+  * Option --buffer-size-mb of "tsp" now accepts decimal values (eg. "0.5").
+  * Added options --local-time-offset, --next-change, --next-time-offset,
+    --only-country name and --only-region to plugin "timeref".
+  * The command "tsdump" now displays the splice countdown when there is one.
+  * Added options --has-splice-countdown, --splice-countdown,
+    --min-splice-countdown and --max-splice-countdown to plugin "filter".
+  * Added option --label-close to output plugin "hls".
+  * Added option --ignore-absent to plugin "zap".
+
+[BUG] Bug fixes:
+
+  * In input plugin "hls", when the sub-playlists or media segments had
+    relative URI's with absolute file path, the sub-playlists or segments
+    were not correctly loaded.
+  * On Unix systems (Linux, macOS), the option --append was not correctly
+    handled in plugin "file". The file was rewritten from the beginning.
+  * In plugin "pes", when a NALunit contained more than one SEI message,
+    only the first one was reported.
+  * In plugin "spliceinject", the non-immediate time_signal() commands were
+    immediately injected. Now, they are processed the same way as non-immediate
+    splice_insert() commands.
+  * In command "tsp", when the number of initial null packets (--add-start-
+    stuffing) was larger than half the global buffer, the command terminated
+    before having read the input (an end of file was incorrectly assumed).
+
+-------------------------------------------------------------------------------
+
 VERSION 3.19-1516
 
 [NEW] New commands and plugins:

@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
   <ImportGroup Label="PropertySheets">
     <Import Project="msvc-common-begin.props" />
   </ImportGroup>
+
   <ItemGroup>
     <ClCompile Include="..\..\src\tsplugins\tsplugin_aes.cpp" />
     <ClCompile Include="..\..\src\tsplugins\tsplugin_analyze.cpp" />
@@ -64,6 +66,7 @@
     <ClCompile Include="..\..\src\tsplugins\tsplugin_skip.cpp" />
     <ClCompile Include="..\..\src\tsplugins\tsplugin_slice.cpp" />
     <ClCompile Include="..\..\src\tsplugins\tsplugin_spliceinject.cpp" />
+    <ClCompile Include="..\..\src\tsplugins\tsplugin_srt.cpp" />
     <ClCompile Include="..\..\src\tsplugins\tsplugin_stuffanalyze.cpp" />
     <ClCompile Include="..\..\src\tsplugins\tsplugin_svremove.cpp" />
     <ClCompile Include="..\..\src\tsplugins\tsplugin_svrename.cpp" />
@@ -78,29 +81,18 @@
     <ClCompile Include="..\..\src\tsplugins\tsplugin_until.cpp" />
     <ClCompile Include="..\..\src\tsplugins\tsplugin_zap.cpp" />
     <ClCompile Include="..\..\src\tstools\tsp.cpp" />
-    <ClCompile Include="..\..\src\tstools\tspInputExecutor.cpp" />
-    <ClCompile Include="..\..\src\tstools\tspJointTermination.cpp" />
-    <ClCompile Include="..\..\src\tstools\tspOptions.cpp" />
-    <ClCompile Include="..\..\src\tstools\tspOutputExecutor.cpp" />
-    <ClCompile Include="..\..\src\tstools\tspPluginExecutor.cpp" />
-    <ClCompile Include="..\..\src\tstools\tspProcessorExecutor.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\src\tstools\tspInputExecutor.h" />
-    <ClInclude Include="..\..\src\tstools\tspJointTermination.h" />
-    <ClInclude Include="..\..\src\tstools\tspOptions.h" />
-    <ClInclude Include="..\..\src\tstools\tspOutputExecutor.h" />
-    <ClInclude Include="..\..\src\tstools\tspPluginExecutor.h" />
-    <ClInclude Include="..\..\src\tstools\tspProcessorExecutor.h" />
-  </ItemGroup>
+
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0305170C-F14D-4812-8B14-1468D6607794}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>tsp_static</RootNamespace>
   </PropertyGroup>
+
   <ImportGroup Label="PropertySheets">
     <Import Project="msvc-target-exe.props" />
     <Import Project="msvc-use-tsducklib.props" />
     <Import Project="msvc-common-end.props" />
   </ImportGroup>
+
 </Project>

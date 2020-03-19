@@ -2,36 +2,20 @@
 TSDuck - List of features to be implemented or fixed
 ====================================================
 
+* Issue #515: Fix scheduling of sections in some pathological cases.
+
+* Issue #324: Fix tsswitch --delayed-switch --receive-timeout.
+
 * Improve packet distribution in plugin "merge". Evaluate average stuffing
   distribution, evaluate merged stream bitrate, then smoothen merged packets.
 
 * Implement missing PSI/SI tables and descriptors (list below).
 
   ISO/IEC 13818-1 / H.222 (MPEG system layer)
-  - 2.6.40   IOD_descriptor
-  - 2.6.44   FMC_descriptor
-  - 2.6.48   muxcode_descriptor
-  - 2.6.50   FmxBufferSize_descriptor
-  - 2.6.52   MultiplexBuffer_descriptor
-  - 2.6.54   FlexMuxTiming_descriptor
   - 2.6.56   content_labelling_descriptor
   - 2.6.58   metadata_pointer_descriptor
   - 2.6.60   metadata_descriptor
-  - 2.6.62   metadata_STD_descriptor
-  - 2.6.68   MPEG2_AAC_audio_descriptor
-  - 2.6.70   MPEG4_text_descriptor
-  - 2.6.72   MPEG4_audio_extension_descriptor
-  - 2.6.74   auxiliary_video_stream_descriptor
-  - 2.6.76   SVC_extension_descriptor
-  - 2.6.78   MVC_extension_descriptor
-  - 2.6.80   J2K_video_descriptor
   - 2.6.82   MVC_operation_point_descriptor
-  - 2.6.84   MPEG2_stereoscopic_video_format_descriptor
-  - 2.6.86   stereoscopic_program_info_descriptor
-  - 2.6.88   stereoscopic_video_info_descriptor
-  - 2.6.93   transport_profile_descriptor
-  - 2.6.99   AF_extensions_descriptor
-  - 2.6.100  HEVC_operation_point_descriptor
   - 2.6.102  HEVC_hierarchy_extension_descriptor
   - 2.6.104  green_extension_descriptor
   - 2.6.106  MPEGH_3D_audio_descriptor
@@ -43,46 +27,21 @@ TSDuck - List of features to be implemented or fixed
   - 2.6.118  MPEGH_3D_audio_command_descriptor
   - 2.6.119  quality_extension_descriptor
   - 2.6.120  virtual_segmentation_descriptor
-  - 2.12.6   metadata_section
-  - 2.11.3.8 ISO_IEC_14496_section
+  - With embedded data structures from ISO/IEC 14496-1 (MPEG-4 system):
+    - 2.6.40   IOD_descriptor
+    - 2.6.48   muxcode_descriptor
+    - 2.6.50   FmxBufferSize_descriptor
+  - With embedded data structures from ISO/IEC 14496-3 (MPEG-4 Audio):
+    - 2.6.72   MPEG4_audio_extension_descriptor
+  - With embedded data structures from ISO/IEC 14496-17 (MPEG-4 text subtitles):
+    - 2.6.70   MPEG4_text_descriptor
+  - With embedded data structures from ISO/IEC 23002-3 (MPEG-C auxiliairy video):
+    - 2.6.74   auxiliary_video_stream_descriptor
+  - With embedded data structures from ISO/IEC 23008-2 / H.265 (HEVC):
+    - 2.6.100  HEVC_operation_point_descriptor
 
-  ETSI EN 300 468 (DVB SI)
-  - 5.2.8    Stuffing Table (ST)
-  - 6.2.3    announcement_support_descriptor
-  - 6.2.6    cell_frequency_link_descriptor
-  - 6.2.7    cell_list_descriptor
-  - 6.2.14   DSNG_descriptor
-  - 6.2.17   frequency_list_descriptor
-  - 6.2.18   FTA_content_management_descriptor
-  - 6.2.21   mosaic_descriptor
-  - 6.2.30   PDC_descriptor
-  - 6.2.38   short_smoothing_buffer_descriptor
-  - 6.2.42   telephone_descriptor
-  - 6.4.4    part 9 of ETSI TS 102 825
-  - 6.4.5.1  C2_delivery_system_descriptor
-  - 6.4.5.2  SH_delivery_system_descriptor
-  - 6.4.5.3  T2_delivery_system_descriptor
-  - 6.4.5.4  C2_bundle_delivery_system_descriptor
-  - 6.4.6    image_icon_descriptor
-  - 6.4.8    network_change_notify_descriptor
-  - 6.4.11   target_region_descriptor
-  - 6.4.12   target_region_name_descriptor
-  - 6.4.14   URI_linkage_descriptor
-  - 6.4.15   video_depth_range_descriptor
-  - G.3.1    DTS-HD_audio_stream_descriptor
-
-  A038 (DVB SI)
-  - 6.4.6.5  S2X satellite delivery system descriptor
-
-  ETSI TS 102 006 (System Software Update)
-  - 9.5.2.6   update_descriptor
-  - 9.5.2.7   SSU_location_descriptor
-  - 9.5.2.8   SSU_subgroup_association_descriptor
-  - 9.5.2.9   scheduling_descriptor
-  - 9.5.2.11  SSU_event_name_descriptor
-  - 9.5.2.12  message_descriptor (not the same as ETSI EN 300 468, name it SSUMessageDescriptor)
-  - 9.5.2.14  enhanced_message_descriptor (name it SSUEnhancedMessageDescriptor for consistency)
-  - 9.5.2.15  ssu_uri_descriptor
+  ETSI TS 102 825-9 (CPCM System Adaptation Layer)
+  - 4.1.5  CPCM_delivery_signalling_descriptor (details in ETSI TS 102 825-4, 5.4.5)
 
   ETSI EN 303 560 (TTML subtitling systems)
   - 5.2.1.1  TTML subtitling descriptor

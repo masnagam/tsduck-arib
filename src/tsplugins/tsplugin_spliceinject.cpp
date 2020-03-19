@@ -1,7 +1,7 @@
 //----------------------------------------------------------------------------
 //
 // TSDuck - The MPEG Transport Stream Toolkit
-// Copyright (c) 2005-2019, Thierry Lelegard
+// Copyright (c) 2005-2020, Thierry Lelegard
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -56,13 +56,13 @@ namespace {
     // Default minimum file stability delay.
     const ts::MilliSecond DEFAULT_MIN_STABLE_DELAY = 500;
 
-    // Default start delay for non-immediate splice_insert() commands.
+    // Default start delay for non-immediate splice_insert() and time_signal() commands.
     const ts::MilliSecond DEFAULT_START_DELAY = 2000;
 
-    // Default inject interval for non-immediate splice_insert() commands.
+    // Default inject interval for non-immediate splice_insert() and time_signal() commands.
     const ts::MilliSecond DEFAULT_INJECT_INTERVAL = 800;
 
-    // Default inject count for non-immediate splice_insert() commands.
+    // Default inject count for non-immediate splice_insert() and time_signal() commands.
     const size_t DEFAULT_INJECT_COUNT = 2;
 
     // Default max size for files.
@@ -80,7 +80,7 @@ namespace {
 namespace ts {
     class SpliceInjectPlugin:
         public ProcessorPlugin,
-        private PMTHandlerInterface,
+        private SignalizationHandlerInterface,
         private SectionProviderInterface
     {
         TS_NOBUILD_NOCOPY(SpliceInjectPlugin);
@@ -212,8 +212,8 @@ namespace ts {
         Mutex         _wfb_mutex;           // Mutex waiting for _wfb_received.
         Condition     _wfb_condition;       // Condition waiting for _wfb_received.
 
-        // Implementation of PMTHandlerInterface.
-        virtual void handlePMT(const PMT&) override;
+        // Implementation of SignalizationHandlerInterface.
+        virtual void handlePMT(const PMT&, PID) override;
 
         // Implementation of SectionProviderInterface.
         virtual void provideSection(SectionCounter counter, SectionPtr& section) override;
@@ -296,14 +296,14 @@ ts::SpliceInjectPlugin::SpliceInjectPlugin(TSP* tsp_) :
 
     option(u"inject-count", 0, UNSIGNED);
     help(u"inject-count",
-         u"For non-immediate splice_insert() commands, specifies the number of times "
+         u"For non-immediate splice_insert() and time_signal() commands, specifies the number of times "
          u"the same splice information section is injected. The default is " +
          UString::Decimal(DEFAULT_INJECT_COUNT) + u". "
          u"Other splice commands are injected once only.");
 
     option(u"inject-interval", 0, UNSIGNED);
     help(u"inject-interval",
-         u"For non-immediate splice_insert() commands, specifies the interval in "
+         u"For non-immediate splice_insert() and time_signal() commands, specifies the interval in "
          u"milliseconds between two insertions of the same splice information "
          u"section. The default is " + UString::Decimal(DEFAULT_INJECT_INTERVAL) + u" ms.");
 
@@ -535,10 +535,10 @@ ts::ProcessorPlugin::Status ts::SpliceInjectPlugin::processPacket(TSPacket& pkt,
 
 //----------------------------------------------------------------------------
 // Invoked when the PMT of the service is found.
-// Implementation of PMTHandlerInterface.
+// Implementation of SignalizationHandlerInterface.
 //----------------------------------------------------------------------------
 
-void ts::SpliceInjectPlugin::handlePMT(const PMT& pmt)
+void ts::SpliceInjectPlugin::handlePMT(const PMT& pmt, PID)
 {
     // Get the PID with PCR's.
     if (_pcr_pid == PID_NULL) {
@@ -768,25 +768,33 @@ ts::SpliceInjectPlugin::SpliceCommand::SpliceCommand(SpliceInjectPlugin* plugin,
     }
 
     // The initial values for the member fields are set for one immediate injection.
-    // This must be changed for non-immediate splice insert commands.
-    if (sit.isValid() && sit.splice_command_type == SPLICE_INSERT && !sit.splice_insert.canceled && !sit.splice_insert.immediate) {
+    // This must be changed for non-immediate splice_insert() and time_signal() commands.
+    if (sit.isValid() &&
+        ((sit.splice_command_type == SPLICE_TIME_SIGNAL && sit.time_signal.set()) ||
+         (sit.splice_command_type == SPLICE_INSERT && !sit.splice_insert.canceled && !sit.splice_insert.immediate)))
+    {
         // Compute the splice event PTS value. This will be the last time for
         // the splice command injection since the event is obsolete afterward.
-        if (sit.splice_insert.program_splice) {
-            // Common PTS value, program-wide.
-            if (sit.splice_insert.program_pts.set()) {
-                last_pts = sit.splice_insert.program_pts.value();
+        if (sit.splice_command_type == SPLICE_INSERT) {
+            if (sit.splice_insert.program_splice) {
+                // Common PTS value, program-wide.
+                if (sit.splice_insert.program_pts.set()) {
+                    last_pts = sit.splice_insert.program_pts.value();
+                }
             }
-        }
-        else {
-            // Compute the earliest PTS in all components.
-            for (auto it = sit.splice_insert.components_pts.begin(); it != sit.splice_insert.components_pts.end(); ++it) {
-                if (it->second.set()) {
-                    if (last_pts == INVALID_PTS || SequencedPTS(it->second.value(), last_pts)) {
-                        last_pts = it->second.value();
+            else {
+                // Compute the earliest PTS in all components.
+                for (auto it = sit.splice_insert.components_pts.begin(); it != sit.splice_insert.components_pts.end(); ++it) {
+                    if (it->second.set()) {
+                        if (last_pts == INVALID_PTS || SequencedPTS(it->second.value(), last_pts)) {
+                            last_pts = it->second.value();
+                        }
                     }
                 }
             }
+        }
+        else if (sit.splice_command_type == SPLICE_TIME_SIGNAL) {
+            last_pts = sit.time_signal.value();
         }
         // If we could not find the event PTS, keep one single immediate injection.
         // Otherwise, compute initial PTS and injection count.
