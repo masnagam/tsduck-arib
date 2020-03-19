@@ -1,9 +1,9 @@
 # tsduck-arib
 
-> A TSDuck fork working with Japanese TV broadcast contents
+> TSDuck with ARIB extensions for Japanese TV broadcast contents
 
-![linux-build](https://img.shields.io/circleci/build/github/masnagam/tsduck-arib/master.svg?label=linux-build)
-![Travis (.com) branch](https://img.shields.io/travis/com/masnagam/tsduck-arib/master.svg?label=macos-build)
+![Linux](https://github.com/masnagam/tsduck-arib/workflows/Linux/badge.svg)
+![macOS](https://github.com/masnagam/tsduck-arib/workflows/macOS/badge.svg)
 
 ## How to build with ARIB support
 
@@ -39,6 +39,7 @@ Tools listed below are required for building aribb24:
 And then, build with `ARIB=1`:
 
 ```console
+$ build/install-prerequisites.sh
 $ make ARIB=1
 $ make install SYSPREFIX=/usr/local ARIB=1
 
@@ -60,17 +61,14 @@ tsduck-arib supports several build options.  See [building.md] for details.
 
 ## Test environments
 
-* [Circle CI] for Linux build
-* [Travis CI] for macOS build
+tsduck-arib is tested on Linux and macOS using GitHub Actions.
 
-I'm planning to use [AppVeyor] for Wondows build.
-
-tsduck-arib is built successfully on environments above.  But `make test` fail
-in several tests frequently due to insufficient time precision.
+tsduck-arib can be built successfully on environments above.  But `make test`
+fails in several tests frequently due to insufficient time precision.
 
 The tests assume a time error less than 50ms.  But it's impossible to guarantee
 the maximum wait time of threads/processes in a container running on a CI
-service, especially on [Travis CI] for macOS build.
+service, especially in the macOS build.
 
 There are several solutions to fix the test failures:
 
@@ -85,23 +83,5 @@ There are several solutions to fix the test failures:
 
 No solution has applied at this moment.
 
-[Circle CI]: https://circleci.com/gh/masnagam/tsduck-arib
-[Travis CI]: https://travis-ci.com/masnagam/tsduck-arib
-[AppVeyor]: https://ci.appveyor.com/project/masnagam/tsduck-arib
 [Jasmine]: https://jasmine.github.io/api/edge/Clock.html
 [korfuri/fake_clock]: https://github.com/korfuri/fake_clock
-
-### Alpine Linux
-
-tsduck-arib can be built on Alpine Linux with a small modification like below:
-
-```console
-sed -i -e '1s/^#define _IOC(/#define _IOC_(/' /usr/include/bits/ioctl.h
-sed -i -e '2i #define _IOC(a,b,c,d) ((int)_IOC_(a,b,c,d))' /usr/include/bits/i
-```
-
-But functions depending on the pthreads don't work due to an incompatibility
-with the pthreads API on Alpine Linux.  The incompatibility causes an assertion
-failure at [L184 in utestMessageQueue.cpp].
-
-[L184 in utestMessageQueue.cpp]: ./src/utest/utestMessageQueue.cpp#L184
